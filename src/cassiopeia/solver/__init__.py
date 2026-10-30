@@ -42,3 +42,13 @@ __all__ = [
     "PercolationSolver",
     "SpectralNeighborJoiningSolver",
 ]
+
+
+def __getattr__(name: str):
+    # 2.x alias ``cas.solver.dissimilarity``; imported lazily because the module
+    # warns that it is deprecated.
+    if name == "dissimilarity":
+        from . import dissimilarity_functions
+
+        return dissimilarity_functions
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

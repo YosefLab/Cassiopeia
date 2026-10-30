@@ -31,7 +31,7 @@ it is still possible to use different tools to manage dependencies, such as `uv`
 ## Installing dev dependencies
 
 In addition to the packages needed to _use_ this package,
-you need additional python packages to [run tests](#writing-tests) and [build the documentation](#docs-building).
+you need additional python packages to run tests and build the documentation (see below).
 
 :::::{tabs}
 ::::{group-tab} Hatch
@@ -260,25 +260,25 @@ Please write documentation for new or changed features and use-cases.
 This project uses [sphinx][] with the following features:
 
 - The [myst][] extension allows to write documentation in markdown/Markedly Structured Text
-- [Numpy-style docstrings][numpydoc] (through the [napoloen][numpydoc-napoleon] extension).
-- Jupyter notebooks as tutorials through [myst-nb][] (See [Tutorials with myst-nb](#tutorials-with-myst-nb-and-jupyter-notebooks))
+- [Google-style docstrings][google-style] (through the [napoleon][napoleon] extension).
+- Jupyter notebooks as tutorials through [nbsphinx][] (see "Tutorials with jupyter notebooks" below)
 - [sphinx-autodoc-typehints][], to automatically reference annotated input and output types
-- Citations (like {cite:p}`Virshup_2023`) can be included with [sphinxcontrib-bibtex](https://sphinxcontrib-bibtex.readthedocs.io/)
 
 See scanpy’s {doc}`scanpy:dev/documentation` for more information on how to write your own.
 
 [sphinx]: https://www.sphinx-doc.org/en/master/
 [myst]: https://myst-parser.readthedocs.io/en/latest/intro.html
-[myst-nb]: https://myst-nb.readthedocs.io/en/latest/
-[numpydoc-napoleon]: https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
-[numpydoc]: https://numpydoc.readthedocs.io/en/latest/format.html
+[nbsphinx]: https://nbsphinx.readthedocs.io/
+[napoleon]: https://www.sphinx-doc.org/en/master/usage/extensions/napoleon.html
+[google-style]: https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings
 [sphinx-autodoc-typehints]: https://github.com/tox-dev/sphinx-autodoc-typehints
 
-### Tutorials with myst-nb and jupyter notebooks
+### Tutorials with jupyter notebooks
 
-The documentation is set-up to render jupyter notebooks stored in the `docs/notebooks` directory using [myst-nb][].
-Currently, only notebooks in `.ipynb` format are supported that will be included with both their input and output cells.
-It is your responsibility to update and re-run the notebook whenever necessary.
+The documentation renders the jupyter notebooks stored in the `notebooks` directory (copied to
+`docs/notebooks` at build time) using [nbsphinx][]. Notebooks are not executed during the build, so
+commit them with their outputs. It is your responsibility to update and re-run a notebook whenever
+necessary.
 
 If you are interested in automatically running notebooks as part of the continuous integration,
 please check out [this feature request][issue-render-notebooks] in the `cookiecutter-scverse` repository.

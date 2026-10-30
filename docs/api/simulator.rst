@@ -21,7 +21,8 @@ Tree Topology Simulators
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 These functions simulate tree topologies and return a
-:class:`treedata.TreeData` object with the tree stored in ``obst[tree_key]``.
+:class:`treedata.TreeData` object with the tree stored in ``obst[key_added]``
+(``"simulated"`` by default).
 
 .. autosummary::
    :toctree: reference/

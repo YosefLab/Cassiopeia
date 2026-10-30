@@ -2,7 +2,6 @@
 Tests for cassiopeia/tools/parameter_estimators.py
 """
 
-import networkx as nx
 import numpy as np
 import pandas as pd
 import pytest
@@ -44,7 +43,7 @@ def test_estimate_mutation_rate(discrete_tree, continuous_tree):
 
     # Test with time (continuous)
     mut_rate = parameter_estimators.estimate_mutation_rate(
-        continuous_tree, continuous=True, depth_key="time"
+        continuous_tree, continuous=True, time_key="time"
     )
     assert np.isclose(mut_rate, 0.5917110077950752)
 
@@ -179,8 +178,7 @@ def test_layer_deprecation_in_all_functions(discrete_tree):
 
 def test_check_continuous_not_int_empty_edges():
     """Test that empty edges list returns early without error."""
-    tree = nx.DiGraph()
-    parameter_estimators._check_continuous_not_int(tree, [], continuous=True)
+    parameter_estimators._check_continuous_not_int([], continuous=True)
 
 
 def test_fraction_missing_various_missing_states():

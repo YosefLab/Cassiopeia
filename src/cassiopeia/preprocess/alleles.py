@@ -17,6 +17,7 @@ from . import _native
 from ._utils import (
     allele_fractions,
     as_list,
+    check_choice,
     copy_attrs,
     default_threads,
     finish_plot,
@@ -53,6 +54,110 @@ def _resolve_contigs(construct: Construct, names: list[str], contigs) -> list[in
     if missing:
         raise PreprocessError(f"Contigs not in BAM header: {missing}")
     return sorted(index[c] for c in contigs)
+
+
+_GEM_SUFFIX = re.compile(r"-\d+$")
+
+
+def _barcode_variants(cells: list[str]) -> list[str]:
+    """``cells`` plus each barcode without its ``-1``-style suffix, or with ``-1`` added.
+
+    Cell Ranger and STARsolo barcodes end in ``-1`` while :func:`cassiopeia.pp.align`
+    writes bare barcodes, so both forms are matched. Barcodes that differ only in
+    the suffix (several GEM wells) are matched exactly.
+    """
+    bases = [_GEM_SUFFIX.sub("", c) for c in cells]
+    if len(set(bases)) < len(bases):
+        return cells
+    added = {b + "-1" for b, c in zip(bases, cells, strict=True) if b == c}
+    return sorted(set(cells) | set(bases) | added)
+
+
+def _peek_tag(bam: str, tag: str, n: int = 1000) -> list[str]:
+    """Values of ``tag`` in the first ``n`` records of a BAM."""
+    import pysam
+
+    out = []
+    with pysam.AlignmentFile(bam, check_sq=False) as f:
+        for i, r in enumerate(f.fetch(until_eof=True)):
+            if i >= n:
+                break
+            if r.has_tag(tag):
+                out.append(str(r.get_tag(tag)))
+    return out
+
+
+def _warn_read_loss(
+    stats: dict,
+    n_rows: int,
+    bam: str,
+    *,
+    cb_tag: str | None,
+    umi_tag: str | None,
+    cells: list[str] | None,
+    min_mapq: int,
+    min_reads_per_umi: int,
+) -> None:
+    """Warn when no alleles are called or most on-target records are dropped, naming why."""
+    on_target = stats.get("records_on_target", 0)
+    used = stats.get("records_used", 0)
+    if stats.get("records", 0) == 0:
+        logger.warning("call_alleles: the BAM has no records on the selected contigs.")
+        return
+    # barcodes outside `cells` (e.g. empty droplets) are expected unless nothing is left
+    expected_loss = stats.get("not_in_cells", 0) if n_rows else 0
+    if used >= 0.5 * (on_target - expected_loss):
+        if n_rows == 0 and stats.get("low_read_umis", 0):
+            logger.warning(
+                f"call_alleles: no alleles were called: all {stats['low_read_umis']:,} UMIs have "
+                f"fewer than {min_reads_per_umi} reads. Lower `min_reads_per_umi`."
+            )
+        return
+    losses = {
+        "filtered_flag": ("unmapped, secondary or supplementary", None),
+        "filtered_mapq": (f"MAPQ < {min_mapq}", "lower `min_mapq`"),
+        "missing_cell": (
+            f"no {cb_tag!r} tag",
+            "check `cb_tag` (pp.align, STARsolo and Cell Ranger write 'CB'), or pass "
+            "`cb_tag=None` for bulk data",
+        ),
+        "not_in_cells": ("cell barcode not in `cells`", None),
+        "missing_umi": (
+            f"no {umi_tag!r} tag",
+            "check `umi_tag` (pp.align, STARsolo and Cell Ranger write 'UB'), or pass "
+            "`umi_tag=None` for data without UMIs",
+        ),
+        "unaligned": (
+            "not aligned",
+            "check that the BAM was aligned to the construct reference",
+        ),
+        "no_intbc": ("intBC not read", "check the construct's `intbc` position"),
+    }
+    counts = {k: stats.get(k, 0) for k in losses if stats.get(k, 0)}
+    if n_rows:
+        counts.pop("not_in_cells", None)
+    parts = [f"{n:,} {losses[k][0]}" for k, n in sorted(counts.items(), key=lambda x: -x[1])]
+    head = (
+        "no alleles were called"
+        if n_rows == 0
+        else f"only {used:,}/{on_target - expected_loss:,} on-target records were used"
+    )
+    msg = f"call_alleles: {head}"
+    if parts:
+        msg += f"; records dropped: {', '.join(parts)}"
+    if counts:
+        top = max(counts, key=counts.get)
+        hint = losses[top][1]
+        if top == "not_in_cells" and cells and cb_tag:
+            seen = _peek_tag(bam, cb_tag, 1000)
+            if seen:
+                hint = (
+                    f"`cells` must hold the BAM's {cb_tag!r} barcodes (e.g. {seen[0]!r}; "
+                    f"`cells` has e.g. {cells[0]!r})"
+                )
+        if hint:
+            msg += f". {hint[0].upper()}{hint[1:]}"
+    logger.warning(msg + ".")
 
 
 def _group_rows(
@@ -184,6 +289,16 @@ def call_alleles(
     (see :func:`cassiopeia.pp.collapse_umis`) before the table is built,
     which keeps it small for large experiments.
 
+    Process one sample per allele table. The later steps identify cells by
+    ``cellBC`` alone, so the same barcode in two samples would be merged, and
+    they need the categorical columns and ``df.attrs`` (thresholds, read
+    statistics) that ``pd.concat`` drops. To analyze several samples
+    together, process each one separately and combine the character
+    matrices: use ``mapping="allele"`` or a shared dict in
+    :func:`cassiopeia.pp.alleles_to_characters` so that states mean the same
+    in every sample, and make the cell names unique (e.g. prefix them with
+    the sample name).
+
     Args:
         bam: Aligned BAM (coordinate-sorted and indexed for fast contig access).
         construct: Construct, preset name or YAML path.
@@ -203,11 +318,15 @@ def call_alleles(
             selected contigs. ``False`` streams the whole file (still
             filtering by contig); used automatically when there is no index.
         cells: Cell barcodes to keep (list or file, e.g. Cell Ranger's
-            ``barcodes.tsv.gz``).
+            ``barcodes.tsv.gz``). Barcodes match with or without the ``-1``
+            suffix that Cell Ranger and STARsolo add and
+            :func:`cassiopeia.pp.align` does not; ``cellBC`` keeps the BAM's
+            barcodes.
         umi_max_dist: Merge UMIs within this Hamming distance inside each
             (cell, intBC), as the pre-3.0 pipeline did. 0 disables (STARsolo
             and Cell Ranger already correct UMIs).
-        sample: Optional sample name, stored in a ``sample`` column.
+        sample: Optional sample name, stored in a ``sample`` column. Do not
+            concatenate the tables of several samples (see above).
         normalize_indels: Left-align indels before calling (makes calls
             independent of the aligner).
         clip_missing: Call a site missing (instead of unedited) when the
@@ -236,6 +355,7 @@ def call_alleles(
         (``read_stats['reads_per_umi']``).
     """
     t0 = time.time()
+    check_choice("intbc_from", intbc_from, ("auto", "sequence", "contig"))
     c = load_construct(construct)
     bam = str(bam)
     n_threads = default_threads(n_threads)
@@ -263,7 +383,7 @@ def call_alleles(
         "count_tag": count_tag or "",
         "min_mapq": min_mapq,
         "n_threads": n_threads,
-        "cells": cell_list or [],
+        "cells": _barcode_variants(cell_list) if cell_list else [],
         "umi_max_dist": umi_max_dist if umi_tag else 0,
         "min_reads": min_reads_per_umi if umi_tag else 0,
         "intbc_from_contig": from_contig,
@@ -335,11 +455,23 @@ def call_alleles(
         + (f" -> {len(df):,} alleles" if collapse else "")
         + f" in {df['cellBC'].nunique():,} cells ({elapsed:.1f}s)"
     )
-    if stats.get("records_on_target", 0) and used / max(stats["records_on_target"], 1) < 0.5:
-        logger.warning(
-            "Fewer than half of the on-target reads were usable; check the construct "
-            f"(read statistics: {stats})."
-        )
+    if cell_list and cb_tag and len(df):
+        n_suffix = len(set(df["cellBC"].astype(str)) - set(cell_list))
+        if n_suffix:
+            logger.info(
+                f"call_alleles: {n_suffix:,} cells matched `cells` only after adding or removing "
+                "the '-1' barcode suffix; cellBC keeps the BAM's barcodes."
+            )
+    _warn_read_loss(
+        stats,
+        len(df),
+        bam,
+        cb_tag=cb_tag,
+        umi_tag=umi_tag,
+        cells=cell_list,
+        min_mapq=min_mapq,
+        min_reads_per_umi=min_reads_per_umi,
+    )
     if plot or save:
         from ._plotting import plot_call_alleles
 
@@ -360,10 +492,38 @@ def call_read(
         construct: Construct, preset name or YAML path.
         ref_pos: 0-based alignment start on the construct reference.
         cigar: CIGAR as ``(op, length)`` pairs using BAM op codes (0=M, 1=I,
-            2=D, 3=N, 4=S).
+            2=D, 3=N, 4=S, 5=H, 6=P, 7==, 8=X).
         seq: Read sequence.
-        qual: Base qualities (Phred).
+        qual: Base qualities (Phred), one per base of ``seq``.
+
+    Returns:
+        ``None`` if the read cannot be called (e.g. it does not reach the
+        edit sites), otherwise a dict with ``intBC`` (the bases aligned to the
+        intBC; empty if not covered), ``tokens`` (the allele called at each
+        site, in construct order; empty if missing) and ``clipped`` (per
+        site, whether soft clipping hides its window).
+
+    Raises:
+        ValueError: If the CIGAR does not match the sequence or runs past
+            the reference.
     """
     c = load_construct(construct)
-    q = None if qual is None else bytes(np.asarray(list(qual), dtype=np.uint8))
-    return _native.call_read_py(c._native(), ref_pos, list(cigar), seq, q)
+    cigar = [(int(op), int(n)) for op, n in cigar]
+    bad = [(op, n) for op, n in cigar if not 0 <= op <= 8 or n < 0]
+    if bad:
+        raise ValueError(f"Invalid CIGAR operations {bad}: use BAM op codes 0-8.")
+    query = sum(n for op, n in cigar if op in (0, 1, 4, 7, 8))
+    ref = sum(n for op, n in cigar if op in (0, 2, 3, 7, 8))
+    if query != len(seq):
+        raise ValueError(f"The CIGAR covers {query} read bases but `seq` has {len(seq)}.")
+    if qual is not None:
+        qual = list(qual)
+        if len(qual) != len(seq):
+            raise ValueError(f"`qual` has {len(qual)} values but `seq` has {len(seq)} bases.")
+    if ref_pos < 0 or ref_pos + ref > len(c.reference):
+        raise ValueError(
+            f"The alignment spans reference positions {ref_pos}-{ref_pos + ref} but the "
+            f"construct reference has {len(c.reference)} bases."
+        )
+    q = None if qual is None else bytes(np.asarray(qual, dtype=np.uint8))
+    return _native.call_read_py(c._native(), ref_pos, cigar, seq, q)

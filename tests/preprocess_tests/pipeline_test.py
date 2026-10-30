@@ -12,7 +12,7 @@ def test_run_from_fastq(sim_factory, tmp_path):
     cfg = {
         "construct": "petracer",
         "input": {"fastq": sim.fastqs, "layout": "10xv3", "whitelist": sim.whitelist},
-        "output": {"dir": str(tmp_path / "out"), "name": "s1", "plots": True},
+        "output": {"dir": tmp_path / "out", "name": "s1", "plots": True},  # Path is fine
         "threads": 2,
         "call_alleles": {"min_reads_per_umi": 1},
         "filter_alleles": {"min_umi_per_allele": 2},
@@ -80,7 +80,7 @@ def test_cli(sim_factory, tmp_path, capsys):
     assert "petracer" in capsys.readouterr().out
     assert cli.main(["example-config"]) == 0
     example = yaml.safe_load(capsys.readouterr().out)
-    assert example["construct"] == "petracer"
+    assert example["construct"] == "petracer" and example["call_clones"] is False
     assert cli.main(["build-reference", "gestalt", str(tmp_path / "ref")]) == 0
     assert (tmp_path / "ref" / "gestalt.fa").exists()
     sim = sim_factory("weissman", "clean")

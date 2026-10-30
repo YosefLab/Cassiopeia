@@ -1,6 +1,7 @@
 ==============
 Dissimilarity
 ==============
+.. module:: cassiopeia.dissimilarity
 .. currentmodule:: cassiopeia
 
 Pairwise dissimilarity metrics for comparing character states, and the

@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from cassiopeia.mixins import logger
+from cassiopeia.mixins import PreprocessError, logger
 
 from ._resolve import resolve_alleles
 from ._utils import ALLELE_PASS, SINGLE_CLONE, finish_plot, passing, record_params, set_pass
@@ -86,6 +86,31 @@ def _pass_without(df: pd.DataFrame, exclude: list[str]) -> np.ndarray:
     return df[cols].all(axis=1).to_numpy()
 
 
+def _nothing_kept(
+    df: pd.DataFrame, m: pd.DataFrame, min_detection: float, max_conflict: float
+) -> str:
+    """Why filter_integrations kept no integration."""
+    msg = "filter_integrations kept no integrations: "
+    if len(m):
+        return msg + (
+            f"none of the {len(m):,} (clone, intBC) pairs has detection >= {min_detection} "
+            f"and conflict <= {max_conflict} (highest detection {m['detection'].max():.2f}, "
+            f"lowest conflict {m['conflict'].min():.2f}). Lower `min_detection` or raise "
+            "`max_conflict`; see pp.integration_metrics."
+        )
+    if not len(df):
+        return msg + "the allele table is empty."
+    if "clone" in df.columns and not (df["clone"].notna() & (df["clone"] != "multiplet")).any():
+        return msg + (
+            "no cell is assigned to a clone. With NovaClone, lower its thresholds (e.g. "
+            "`min_cells_assigned`), or skip pp.call_clones for data with a single clone."
+        )
+    return msg + (
+        "no rows pass the earlier filters; check their thresholds (pp.cell_metrics shows "
+        "the cells)."
+    )
+
+
 def filter_integrations(
     df: pd.DataFrame,
     min_detection: float = 0.2,
@@ -104,8 +129,8 @@ def filter_integrations(
     ``detection >= min_detection`` and ``conflict <= max_conflict``, which
     removes silenced or poorly captured integrations, and duplicated
     integrations sharing an intBC. The ``conflict`` rate can be inflated by
-    doublets; cells flagged by :func:`cassiopeia.pp.filter_doublets` are
-    excluded, so you may need to run it before this function.
+    doublets; cells flagged by :func:`cassiopeia.pp.filter_doublets` are left
+    out of the rates, so it can run before or after this function.
 
     Without a ``clone`` column (no :func:`cassiopeia.pp.call_clones`), all
     cells form one clone, labelled ``"0"``, and this is the population intBC
@@ -123,10 +148,15 @@ def filter_integrations(
     Returns:
         The allele table with ``pass_integration``; kept integrations per
         clone are stored in ``df.attrs['integrations']``.
+
+    Raises:
+        PreprocessError: If no integration is kept.
     """
     df = df.copy()
     m = integration_metrics(df, min_umi=min_umi, min_minor_frac=min_minor_frac)
     m["kept"] = (m["detection"] >= min_detection) & (m["conflict"] <= max_conflict)
+    if not m["kept"].any():
+        raise PreprocessError(_nothing_kept(df, m, min_detection, max_conflict))
     kept = m[m["kept"]].groupby("clone")["intBC"].apply(lambda s: sorted(s)).to_dict()
     if "clone" in df.columns:
         clone = df["clone"].astype(object).to_numpy()

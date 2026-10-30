@@ -6,6 +6,7 @@ from collections.abc import Callable
 
 import networkx as nx
 import numpy as np
+import pandas as pd
 import scipy
 from treedata import TreeData
 
@@ -21,17 +22,39 @@ from cassiopeia.utils import (
 )
 
 
+def _resolve_state(
+    tdata: TreeData,
+    name: str,
+    value: int | str | None = None,
+    character_matrix: pd.DataFrame | None = None,
+):
+    """Resolve a single state value (``missing_state``/``unmodified_state``).
+
+    Of several candidates (e.g. the package defaults), the first one present in
+    *character_matrix* is used.
+    """
+    value = _get_parameter(tdata, name, value=value)
+    if not isinstance(value, (list, tuple, set)):
+        return value
+    candidates = list(value)
+    if character_matrix is not None:
+        present = set(pd.unique(character_matrix.astype(object).to_numpy().ravel()))
+        for candidate in candidates:
+            if candidate in present:
+                return candidate
+    return candidates[0]
+
+
 def _resolve_missing_state(tdata: TreeData, missing_state: int | str | None = None):
     """Resolve a single missing-state sentinel value from a TreeData object."""
-    value = _get_parameter(tdata, "missing_state", value=missing_state)
-    if isinstance(value, (list, tuple, set)):
-        return next(iter(value))
-    return value
+    return _resolve_state(tdata, "missing_state", missing_state)
 
 
-def _branch_length(g: nx.DiGraph, parent: str, child: str) -> float:
-    """Return the branch length of an edge, defaulting to 1.0 when unset."""
-    return g.edges[parent, child].get("length", 1.0)
+def _branch_lengths(g: nx.DiGraph, time_key: str) -> dict[tuple, float]:
+    """Branch lengths from node times, else the edge ``length`` (default 1.0)."""
+    if all(time_key in g.nodes[n] for n in g.nodes):
+        return {(u, v): g.nodes[v][time_key] - g.nodes[u][time_key] for u, v in g.edges}
+    return {(u, v): g.edges[u, v].get("length", 1.0) for u, v in g.edges}
 
 
 def calculate_parsimony(
@@ -111,12 +134,14 @@ def log_transition_probability(
     t: float,
     mutation_probability_function_of_time: Callable[[float], float],
     missing_probability_function_of_time: Callable[[float], float],
+    unmodified_state: int | str = 0,
 ) -> float:
     """Gives the log transition probability between two given states.
 
-    Assumes that 0 is the uncut-state, and that only 0 has non-zero probability
-    of transitioning to non-0 states. Additionally, assumes that any non-missing
-    state can mutate to the missing state, specified by ``missing_state``.
+    Assumes that ``unmodified_state`` is the uncut state, and that only it has
+    non-zero probability of transitioning to other states. Additionally, assumes
+    that any non-missing state can mutate to the missing state, specified by
+    ``missing_state``.
 
     Here, "&" represents a placeholder for any non-missing state. Thus, the
     probability of transitioning from any state to any given non-missing
@@ -130,8 +155,8 @@ def log_transition_probability(
 
     Args:
         character: The character whose distribution to draw the prior from.
-        priors: Priors for character states, mapping character index to a dict
-            mapping state to prior probability.
+        priors: Priors for character states, mapping character position to a
+            dict mapping state to prior probability.
         missing_state: The missing-data sentinel value.
         s: The original state.
         s_: The state being transitioned to.
@@ -141,6 +166,7 @@ def log_transition_probability(
         missing_probability_function_of_time: The function defining the
             probability of a lineage acquiring heritable missing data within a
             given time.
+        unmodified_state: The unedited (uncut) state.
 
     Returns:
         The log transition probability between the states.
@@ -163,8 +189,8 @@ def log_transition_probability(
                 return -1e16
             else:
                 return np.log(1 - missing_probability_function_of_time(t))
-        elif s_ == 0:
-            if s == 0:
+        elif s_ == unmodified_state:
+            if s == unmodified_state:
                 return np.log(1 - mutation_probability_function_of_time(t)) + np.log(
                     1 - missing_probability_function_of_time(t)
                 )
@@ -174,7 +200,7 @@ def log_transition_probability(
         else:
             if s == missing_state:
                 return -1e16
-            elif s == 0:
+            elif s == unmodified_state:
                 return (
                     np.log(mutation_probability_function_of_time(t))
                     + np.log(priors[character][s_])
@@ -199,6 +225,8 @@ def log_likelihood_of_character(
     missing_probability_function_of_time: Callable[[float], float],
     stochastic_missing_probability: float,
     implicit_root_branch_length: float,
+    unmodified_state: int | str = 0,
+    time_key: str = "time",
 ) -> float:
     """Calculates the log likelihood of a given character on the tree.
 
@@ -238,10 +266,14 @@ def log_likelihood_of_character(
             pair acquires stochastic missing data at the end of the lineage.
         implicit_root_branch_length: The length of the implicit root branch,
             used if the implicit root needs to be added.
+        unmodified_state: The unedited (uncut) state.
+        time_key: Node attribute holding node times; branch lengths are their
+            differences. Without times, the edge ``length`` (default 1) is used.
 
     Returns:
         The log likelihood of the tree on one character.
     """
+    branch_lengths = _branch_lengths(g, time_key)
 
     def is_leaf(n):
         return g.out_degree(n) == 0
@@ -282,8 +314,8 @@ def log_likelihood_of_character(
                 ]
             else:
                 possible_states = list(set.intersection(*child_possible_states))
-                if 0 not in possible_states:
-                    possible_states.append(0)
+                if unmodified_state not in possible_states:
+                    possible_states.append(unmodified_state)
 
         # This stores the likelihood of each possible state at the current node
         likelihoods_per_state_at_n = {}
@@ -304,9 +336,10 @@ def log_likelihood_of_character(
                             missing_state,
                             s,
                             s_,
-                            _branch_length(g, n, child),
+                            branch_lengths[n, child],
                             mutation_probability_function_of_time,
                             missing_probability_function_of_time,
+                            unmodified_state,
                         )
                         + likelihoods_at_nodes[child][s_]
                     )
@@ -318,9 +351,7 @@ def log_likelihood_of_character(
                                 np.exp(likelihood_s_)
                                 + (
                                     1
-                                    - missing_probability_function_of_time(
-                                        _branch_length(g, n, child)
-                                    )
+                                    - missing_probability_function_of_time(branch_lengths[n, child])
                                 )
                                 * stochastic_missing_probability
                             )
@@ -335,9 +366,9 @@ def log_likelihood_of_character(
         likelihoods_at_nodes[n] = likelihoods_per_state_at_n
 
     # If we are not to use the internal state annotations explicitly,
-    # then we assume an implicit root where each state is the uncut state (0)
-    # Thus, we marginalize over the transition from 0 in the implicit root
-    # to all non-0 states in its child
+    # then we assume an implicit root where each state is the uncut state
+    # Thus, we marginalize over the transition from the uncut state in the
+    # implicit root to all other states in its child
     if not use_internal_character_states:
         # If the implicit root does not exist in the tree, then we impose it,
         # with the length of the branch being specified as
@@ -349,11 +380,12 @@ def log_likelihood_of_character(
                     character,
                     priors,
                     missing_state,
-                    0,
+                    unmodified_state,
                     s_,
                     implicit_root_branch_length,
                     mutation_probability_function_of_time,
                     missing_probability_function_of_time,
+                    unmodified_state,
                 )
                 + likelihoods_at_nodes[root][s_]
                 for s_ in likelihoods_at_nodes[root]
@@ -370,12 +402,12 @@ def log_likelihood_of_character(
             # likelihood at "&" will have the same likelihood as 0 based on the
             # transition rules regarding "&". As "&" is a placeholder when the
             # state is unknown, this can be thought of realizing "&" as 0.
-            if 0 not in likelihoods_at_nodes[root]:
+            if unmodified_state not in likelihoods_at_nodes[root]:
                 return likelihoods_at_nodes[root]["&"]
             else:
-                # Otherwise, we return the likelihood of the 0 state at the
-                # existing implicit root
-                return likelihoods_at_nodes[root][0]
+                # Otherwise, we return the likelihood of the unmodified state at
+                # the existing implicit root
+                return likelihoods_at_nodes[root][unmodified_state]
 
     # If we use the internal state annotations explicitly, then we return
     # the likelihood of the state annotated at this character at the root
@@ -390,25 +422,42 @@ def get_tracing_parameters(
     characters_key: str = "characters",
     time_key: str = "time",
     tree_key: str | None = None,
+    mutation_rate: float | None = None,
+    heritable_missing_rate: float | None = None,
+    stochastic_missing_probability: float | None = None,
+    missing_state: str | int | None = None,
+    unmodified_state: str | int | None = None,
 ) -> tuple[float, float, float]:
     """Gets the lineage tracing parameters from a tree.
 
-    This function attempts to consume these parameters from ``tdata.uns`` as
-    ``mutation_rate``, ``heritable_missing_rate``, and
-    ``stochastic_missing_probability``. If the rates are not found, they are
-    estimated using their respective estimators. Note that in order to estimate
-    the missing data parameters, at least one of the two must be populated.
+    Each parameter is taken from its argument, else from ``tdata.uns``
+    (``mutation_rate``, ``heritable_missing_rate`` and
+    ``stochastic_missing_probability``), else estimated with
+    :func:`~cassiopeia.tl.estimate_mutation_rate` and
+    :func:`~cassiopeia.tl.estimate_missing_rates`. Estimating the missing data
+    parameters requires one of the two.
 
     Args:
         tdata: TreeData object on which to consume/estimate the parameters.
         continuous: If the parameters are to be estimated, whether to estimate
-            them as continuous or discrete parameters.
+            them as continuous (from node times) or discrete (from the number
+            of generations) parameters.
         assume_root_implicit_branch: Whether to include an implicit root branch
             in the tree depth/time when estimating the rate parameters.
         characters_key: The ``obsm`` key for the character matrix used to
             estimate parameters.
-        time_key: Node attribute key containing depth/time values.
+        time_key: Node attribute holding node times (``continuous=True``).
         tree_key: The ``obst`` key of the tree to use.
+        mutation_rate: The mutation rate (per generation, or per unit time if
+            ``continuous``).
+        heritable_missing_rate: The heritable missing data rate (per generation,
+            or per unit time if ``continuous``).
+        stochastic_missing_probability: The probability that a cell/character
+            pair acquires stochastic missing data.
+        missing_state: Value(s) indicating missing data. If ``None``, uses
+            ``tdata.uns["missing_state"]``.
+        unmodified_state: Value(s) indicating an unedited site. If ``None``,
+            uses ``tdata.uns["unmodified_state"]``.
 
     Returns:
         The mutation rate, the heritable missing rate, and the stochastic
@@ -417,20 +466,25 @@ def get_tracing_parameters(
     Raises:
         TreeMetricError: If one of the provided/estimated parameters is invalid.
     """
-    mutation_rate = _get_parameter(tdata, "mutation_rate")
+    if mutation_rate is None:
+        mutation_rate = _get_parameter(tdata, "mutation_rate")
     if mutation_rate is None:
         mutation_rate = parameter_estimators.estimate_mutation_rate(
             tdata,
             continuous,
             assume_root_implicit_branch,
             characters_key=characters_key,
-            depth_key=time_key,
+            time_key=time_key,
             tree_key=tree_key,
+            missing_state=missing_state,
+            unmodified_state=unmodified_state,
         )
 
-    stochastic_missing_probability = _get_parameter(tdata, "stochastic_missing_probability")
-    heritable_missing_rate = _get_parameter(tdata, "heritable_missing_rate")
-    if not (stochastic_missing_probability is not None and heritable_missing_rate is not None):
+    if stochastic_missing_probability is None:
+        stochastic_missing_probability = _get_parameter(tdata, "stochastic_missing_probability")
+    if heritable_missing_rate is None:
+        heritable_missing_rate = _get_parameter(tdata, "heritable_missing_rate")
+    if stochastic_missing_probability is None or heritable_missing_rate is None:
         (
             stochastic_missing_probability,
             heritable_missing_rate,
@@ -438,9 +492,12 @@ def get_tracing_parameters(
             tdata,
             continuous,
             assume_root_implicit_branch,
+            stochastic_missing_probability=stochastic_missing_probability,
+            heritable_missing_rate=heritable_missing_rate,
             characters_key=characters_key,
-            depth_key=time_key,
+            time_key=time_key,
             tree_key=tree_key,
+            missing_state=missing_state,
         )
 
     # We check that the mutation and missing rates have valid values
@@ -467,16 +524,21 @@ def calculate_likelihood(
     characters_key: str = "characters",
     time_key: str = "time",
     tree_key: str | None = None,
+    priors: dict | list | bool | None = None,
+    missing_state: str | int | None = None,
+    unmodified_state: str | int | None = None,
+    mutation_rate: float | None = None,
+    heritable_missing_rate: float | None = None,
+    stochastic_missing_probability: float | None = None,
 ) -> float:
     """Calculates the log likelihood of a tree under a lineage-tracing model.
 
     A wrapper for :func:`get_tracing_parameters` and
-    :func:`log_likelihood_of_character`. The mutation rate, heritable missing
-    rate, and stochastic missing probability are consumed from / estimated for
-    the tree, and the per-character log likelihoods (assuming characters mutate
-    independently) are summed. State priors are read from
-    ``tdata.uns["priors"]`` (``{character index: {state: probability}}``;
-    string keys, as stored in h5td files, are accepted).
+    ``log_likelihood_of_character``. The mutation rate, heritable missing
+    rate, and stochastic missing probability are taken from the arguments or
+    ``tdata.uns``, or estimated for the tree, and the per-character log
+    likelihoods (assuming characters mutate independently) are summed. State
+    priors are required.
 
     Two evolutionary models are supported:
 
@@ -484,7 +546,9 @@ def calculate_likelihood(
       the implicit root branch length is 1.
     * ``'continuous'``: rates are instantaneous; the waiting time until an event
       is exponentially distributed, so the probability that an event occurs in
-      time ``t`` is given by the exponential CDF over branch lengths. The
+      time ``t`` is given by the exponential CDF over branch lengths. Branch
+      lengths are differences of the node times in ``time_key`` (the edge
+      ``length`` attribute, default 1, if the nodes have no times). The
       implicit root branch length is the mean branch length of the tree.
 
     Args:
@@ -494,9 +558,23 @@ def calculate_likelihood(
             states should be assumed to be specified exactly.
         characters_key: The ``obsm`` key for the character matrix (also the node
             attribute under which internal character states are read).
-        time_key: Node attribute key containing depth/time values (used when
-            estimating parameters).
+        time_key: Node attribute holding node times (``model='continuous'``).
         tree_key: The ``obst`` key of the tree to use.
+        priors: Priors for character states (``{character name: {state:
+            probability}}``). ``None`` (default) or ``True`` uses
+            ``tdata.uns["priors"]``; a dict (or a list of per-character dicts)
+            is used directly.
+        missing_state: Value indicating missing data. If ``None``, uses
+            ``tdata.uns["missing_state"]``.
+        unmodified_state: Value indicating an unedited site. If ``None``, uses
+            ``tdata.uns["unmodified_state"]``.
+        mutation_rate: The mutation rate. If ``None``, uses
+            ``tdata.uns["mutation_rate"]`` or estimates it.
+        heritable_missing_rate: The heritable missing data rate. If ``None``,
+            uses ``tdata.uns["heritable_missing_rate"]`` or estimates it.
+        stochastic_missing_probability: The stochastic missing data
+            probability. If ``None``, uses
+            ``tdata.uns["stochastic_missing_probability"]`` or estimates it.
 
     Returns:
         The log likelihood of the tree given the observed character states.
@@ -510,15 +588,18 @@ def calculate_likelihood(
         raise TreeMetricError(f"Unknown model {model!r}. Use 'discrete' or 'continuous'.")
     continuous = model == "continuous"
 
-    character_matrix = _get_characters(tdata, characters_key)
+    character_matrix = _get_characters(tdata, characters_key, missing_state)
     try:
-        priors = _resolve_priors(tdata, True, character_matrix)
+        priors = _resolve_priors(tdata, True if priors is None else priors, character_matrix)
     except ValueError as e:
         raise TreeMetricError(
             f"Priors must be specified for this tree to calculate the likelihood: {e}"
         ) from e
+    if priors is None:
+        raise TreeMetricError("Priors must be specified for this tree to calculate the likelihood.")
 
-    missing_state = _resolve_missing_state(tdata)
+    missing_state = _resolve_state(tdata, "missing_state", missing_state, character_matrix)
+    unmodified_state = _resolve_state(tdata, "unmodified_state", unmodified_state, character_matrix)
 
     # TreeData stores frozen graphs; operate on a copy and seed leaf states.
     g, tree_key = _get_digraph(tdata, tree_key, copy=True)
@@ -556,12 +637,17 @@ def calculate_likelihood(
         characters_key=characters_key,
         time_key=time_key,
         tree_key=tree_key,
+        mutation_rate=mutation_rate,
+        heritable_missing_rate=heritable_missing_rate,
+        stochastic_missing_probability=stochastic_missing_probability,
+        missing_state=missing_state,
+        unmodified_state=unmodified_state,
     )
 
     if continuous:
         mutation_probability_function_of_time = lambda t: 1 - np.exp(-mutation_rate * t)
         missing_probability_function_of_time = lambda t: 1 - np.exp(-heritable_missing_rate * t)
-        implicit_root_branch_length = float(np.mean([_branch_length(g, u, v) for u, v in g.edges]))
+        implicit_root_branch_length = float(np.mean(list(_branch_lengths(g, time_key).values())))
     else:
         mutation_probability_function_of_time = lambda t: mutation_rate
         missing_probability_function_of_time = lambda t: heritable_missing_rate
@@ -583,6 +669,8 @@ def calculate_likelihood(
                 missing_probability_function_of_time,
                 stochastic_missing_probability,
                 implicit_root_branch_length,
+                unmodified_state,
+                time_key,
             )
             for character in range(n_character)
         ]

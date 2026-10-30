@@ -13,9 +13,37 @@ import pysam
 from cassiopeia.mixins import PreprocessError, logger
 
 from . import _native
-from ._utils import default_threads, finish_plot
+from ._utils import check_choice, default_threads, finish_plot
 from .construct import Construct, load_construct
-from .layout import parse_layout
+from .layout import Layout, parse_layout
+
+_STRANDS = {"forward": 0, "reverse": 1, "both": 2}
+
+
+def _warn_low_yield(stats: dict, layout: Layout, has_whitelist: bool) -> None:
+    """Warn when few reads end up as aligned records (e.g. FASTQs in the wrong order)."""
+    order = f"that the FASTQs are given in read order for layout {layout.pattern!r}"
+    valid = stats.get("reads_valid", 0)
+    invalid = stats.get("reads_cell_invalid", 0)
+    molecules = stats.get("molecules", 0)
+    written, aligned = stats.get("records_written", 0), stats.get("records_aligned", 0)
+    if layout.cb and has_whitelist and valid and invalid > 0.5 * valid:
+        logger.warning(
+            f"align: {invalid:,}/{valid:,} reads have a cell barcode that is not in the "
+            f"whitelist. Check the whitelist and {order}."
+        )
+    elif written == 0:
+        logger.warning(f"align: no records were written. Check {order}.")
+    elif layout.umi and valid >= 1000 and molecules * 100 < valid:
+        logger.warning(
+            f"align: {valid:,} reads collapse into only {molecules:,} molecules (over 100 "
+            f"reads per UMI), as if the barcodes and UMIs were constant. Check {order}."
+        )
+    elif aligned < 0.5 * written:
+        logger.warning(
+            f"align: only {aligned:,}/{written:,} records aligned to the construct. Check the "
+            f"construct, `strand`, and {order}."
+        )
 
 
 def _lanes(fastqs, n_reads: int) -> list[list[str]]:
@@ -144,6 +172,9 @@ def align(
         ``cell_umis`` arrays.
     """
     t0 = time.time()
+    check_choice("dedup", dedup, ("umi", "sequence"))
+    check_choice("method", method, ("local", "global"))
+    check_choice("strand", strand, _STRANDS)
     c = load_construct(construct)
     lay = parse_layout(layout)
     lanes = _lanes(fastqs, lay.n_reads)
@@ -186,7 +217,7 @@ def align(
             "gap_extend": gap_extend,
         },
         "min_score": min_score,
-        "strand": {"forward": 0, "reverse": 1, "both": 2}[strand],
+        "strand": _STRANDS[strand],
         "n_threads": default_threads(n_threads),
         "ref_name": c.name,
         "ref_seq": c.reference,
@@ -201,6 +232,7 @@ def align(
         f"align: {stats['reads']:,} reads -> {stats['molecules']:,} molecules, "
         f"{stats['records_aligned']:,}/{stats['records_written']:,} records aligned ({elapsed:.1f}s)"
     )
+    _warn_low_yield(stats, lay, whitelist is not None)
     res["bam"] = output_bam
     res["elapsed"] = elapsed
     if plot or save:

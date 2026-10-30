@@ -24,6 +24,26 @@ def _pass_without(df: pd.DataFrame, exclude: Iterable[str]) -> np.ndarray:
     return df[cols].all(axis=1).to_numpy()
 
 
+def _drop_conflicting_intbcs(
+    df: pd.DataFrame, res: pd.DataFrame, max_conflict: float
+) -> tuple[pd.DataFrame, int]:
+    """Drop (cell, intBC) rows of intBCs that conflict in most of their clone's cells.
+
+    Duplicated integrations hold two alleles in most cells of their clone,
+    while doublets add conflicts to only a few cells per intBC.
+    """
+    from .qc import _cell_clones
+
+    clone = res["cellBC"].map(_cell_clones(df)).astype(object)
+    intbc = res["intBC"].astype(str)
+    rate = res["conflict"].astype(float).groupby([clone, intbc]).mean()
+    noisy = set(rate.index[(rate > max_conflict).to_numpy()])
+    drop = np.fromiter(
+        ((c, i) in noisy for c, i in zip(clone, intbc, strict=True)), dtype=bool, count=len(res)
+    )
+    return res[~drop], len(noisy)
+
+
 def doublet_scores(
     df: pd.DataFrame,
     methods: Iterable[Method] | Literal["auto"] = "auto",
@@ -31,26 +51,48 @@ def doublet_scores(
     min_umi: int = 2,
     min_minor_frac: float = 0.1,
     min_informative: int = 2,
+    max_intbc_conflict: float | None = 0.2,
     hooks: dict[str, Callable[[pd.DataFrame], pd.Series]] | None = None,
 ) -> pd.DataFrame:
     """Per-cell doublet scores (no thresholds applied).
 
     Scores:
         * ``allele_conflict``: fraction of the cell's informative integrations
-          (kept by :func:`cassiopeia.pp.filter_integrations`, with at least
-          ``min_umi`` UMIs) holding two incompatible alleles. Two cells from
-          different lineages carry different alleles at the same intBC, so
-          conflicts nominate doublets. NaN when fewer than ``min_informative``
-          integrations are observed. Minor alleles removed by
-          :func:`cassiopeia.pp.filter_alleles` (``min_allele_frac``,
-          ``allow_allele_conflicts``) are included.
+          (intBCs with at least ``min_umi`` UMIs) holding two incompatible
+          alleles. Two cells from different lineages carry different alleles
+          at the same intBC, so conflicts nominate doublets. NaN when fewer
+          than ``min_informative`` integrations are observed. Minor alleles
+          removed by :func:`cassiopeia.pp.filter_alleles`
+          (``min_allele_frac``, ``allow_allele_conflicts``) are included.
+          After :func:`cassiopeia.pp.filter_integrations`, only its kept
+          integrations are informative; before it, intBCs that conflict in
+          more than ``max_intbc_conflict`` of their clone's cells, such as
+          duplicated integrations, are not.
         * ``clone_mixture``: fraction of the cell's UMIs on intBCs that belong
           to another clone's signature but not its own (1 for NovaClone
           multiplets). Only with more than one clone.
         * ``hooks``: name -> function returning a per-cell score Series.
 
+    Args:
+        df: Allele table.
+        methods: Scores to compute (``"allele_conflict"``,
+            ``"clone_mixture"``), or ``"auto"``: allele conflicts, plus clone
+            mixtures when there is more than one clone.
+        min_umi: UMIs an intBC needs to be informative, and a minor allele
+            needs to count as a conflict.
+        min_minor_frac: UMI fraction a minor allele needs to count as a conflict.
+        min_informative: Informative integrations needed to score
+            ``allele_conflict``.
+        max_intbc_conflict: Before :func:`cassiopeia.pp.filter_integrations`,
+            ignore intBCs whose alleles conflict in more than this fraction
+            of their clone's cells. ``None`` uses every intBC.
+        hooks: Extra scores: name -> function(df) returning a per-cell Series
+            indexed by cellBC.
+
     Returns:
         DataFrame indexed by cellBC with one ``<method>`` column per score.
+        ``attrs['ignored_intbcs']`` counts the intBCs ignored for
+        ``allele_conflict`` because of ``max_intbc_conflict``.
     """
     have_clones = "clone" in df.columns
     n_clones = len(df.attrs.get("clone_intbcs", {})) if have_clones else 1
@@ -71,6 +113,9 @@ def doublet_scores(
         res = resolve_alleles(d, min_umi=min_umi, min_minor_frac=min_minor_frac, use_pass=False)
         res = res[res["n_umis"] >= min_umi]
         res["cellBC"] = res["cellBC"].astype(str)
+        if "pass_integration" not in df.columns and max_intbc_conflict is not None:
+            res, n_ignored = _drop_conflicting_intbcs(df, res, max_intbc_conflict)
+            out.attrs["ignored_intbcs"] = n_ignored
         g = res.groupby("cellBC")
         n_inf = g.size()
         n_conf = g["conflict"].sum()
@@ -132,6 +177,7 @@ def filter_doublets(
     min_umi: int = 2,
     min_minor_frac: float = 0.1,
     min_informative: int = 2,
+    max_intbc_conflict: float | None = 0.2,
     hooks: dict[str, Callable[[pd.DataFrame], pd.Series]] | None = None,
     hook_thresholds: dict[str, float] | None = None,
     plot: bool = True,
@@ -147,17 +193,25 @@ def filter_doublets(
     clone mixtures when there is more than one clone, so the same call works
     for data with many clones and for data where all cells share intBCs.
 
-    Run after :func:`cassiopeia.pp.filter_integrations` so that duplicated or
-    unreliable integrations do not create false conflicts.
+    Can run before or after :func:`cassiopeia.pp.filter_integrations`. After
+    it, only the kept integrations are used for ``allele_conflict``. Before
+    it, intBCs that conflict in more than ``max_intbc_conflict`` of their
+    clone's cells, such as duplicated integrations, are not used, so they do
+    not flag the whole clone; :func:`cassiopeia.pp.filter_integrations` then
+    leaves the flagged cells out of its conflict rates.
 
     Args:
         df: Allele table.
-        methods: Scores to use, or ``"auto"``.
+        methods: Scores to use, or ``"auto"`` (see :func:`doublet_scores`).
         conflict_threshold: Threshold for ``allele_conflict``.
         mixture_threshold: Threshold for ``clone_mixture``.
-        min_umi: UMIs a minor allele needs to count as a conflict.
+        min_umi: UMIs an intBC needs to be informative, and a minor allele
+            needs to count as a conflict.
         min_minor_frac: UMI fraction a minor allele needs to count as a conflict.
         min_informative: Integrations needed to score ``allele_conflict``.
+        max_intbc_conflict: Before :func:`cassiopeia.pp.filter_integrations`,
+            ignore intBCs whose alleles conflict in more than this fraction
+            of their clone's cells. ``None`` uses every intBC.
         hooks: Extra scores: name -> function(df) returning a per-cell Series.
         hook_thresholds: Thresholds for hook scores (default 0.5).
         plot: Plot score distributions with thresholds.
@@ -174,6 +228,7 @@ def filter_doublets(
         min_umi=min_umi,
         min_minor_frac=min_minor_frac,
         min_informative=min_informative,
+        max_intbc_conflict=max_intbc_conflict,
         hooks=hooks,
     )
     thresholds = {"allele_conflict": conflict_threshold, "clone_mixture": mixture_threshold}
@@ -194,8 +249,19 @@ def filter_doublets(
     used = [m for m in thresholds if m in scores.columns]
     record_params(df, **{f"doublet_{m}_threshold": thresholds[m] for m in used})
     record_params(df, doublet_methods=used)
+    ignored = scores.attrs.get("ignored_intbcs")
+    if ignored is not None:
+        record_params(df, doublet_max_intbc_conflict=max_intbc_conflict)
     n = int(flag.sum())
-    logger.info(f"filter_doublets: {n:,}/{len(flag):,} cells flagged ({', '.join(used)})")
+    logger.info(
+        f"filter_doublets: {n:,}/{len(flag):,} cells flagged ({', '.join(used)})"
+        + (
+            f"; allele_conflict ignores {ignored} intBCs that conflict in more than "
+            f"{max_intbc_conflict:.0%} of their clone's cells"
+            if ignored
+            else ""
+        )
+    )
     if plot or save:
         from ._plotting import plot_doublet_scores
 

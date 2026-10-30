@@ -114,7 +114,7 @@ def filter_alleles(
         min_avg_reads_per_umi=min_avg_reads_per_umi,
         allow_allele_conflicts=allow_allele_conflicts,
     )
-    passed = df["pass"].to_numpy()
+    passed = candidate & ~minor
     logger.info(
         f"filter_alleles: {int(umis[passed].sum()):,}/{int(umis.sum()):,} UMIs pass "
         f"(min_allele_frac={min_allele_frac}, min_umi_per_allele={min_umi_per_allele}, "

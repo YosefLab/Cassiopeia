@@ -2,6 +2,8 @@
 
 import warnings
 from collections import defaultdict
+from collections.abc import Mapping
+from typing import Literal, overload
 
 import networkx as nx
 import numpy as np
@@ -9,9 +11,33 @@ import pandas as pd
 import treedata as td
 
 from cassiopeia.mixins import LeafSubsamplerError, LeafSubsamplerWarning
+from cassiopeia.simulator.tracing import _check_node_attr, _rebuild_matrix
 from cassiopeia.utils import _collapse_unifurcations, _get_digraph, _normalize_missing
 
 
+@overload
+def sample_uniform(
+    tdata: td.TreeData,
+    ratio: float | None = None,
+    number_of_leaves: int | None = None,
+    keep_root_edge: bool = True,
+    random_seed: int | None = None,
+    tree_key: str | None = None,
+    key_added: str = "sampled",
+    copy: Literal[True] = True,
+) -> td.TreeData: ...
+@overload
+def sample_uniform(
+    tdata: td.TreeData,
+    ratio: float | None = None,
+    number_of_leaves: int | None = None,
+    keep_root_edge: bool = True,
+    random_seed: int | None = None,
+    tree_key: str | None = None,
+    key_added: str = "sampled",
+    *,
+    copy: Literal[False],
+) -> None: ...
 def sample_uniform(
     tdata: td.TreeData,
     ratio: float | None = None,
@@ -24,8 +50,9 @@ def sample_uniform(
 ) -> td.TreeData | None:
     """Uniformly subsample leaves from a TreeData.
 
-    Selects a random subset of leaves and returns the induced subtree on
-    those leaves. Unifurcations created by leaf removal are collapsed.
+    Selects a random subset of the leaves of ``tdata.obst[tree_key]`` and returns
+    the induced subtree on those leaves. Unifurcations created by leaf removal
+    are collapsed in every tree of the result.
 
     Args:
         tdata: TreeData with a tree in ``obst[tree_key]``.
@@ -46,19 +73,20 @@ def sample_uniform(
             ``tdata.obst[key_added]`` in-place and return ``None``.
 
     Returns:
-        A new TreeData with the induced subtree on the sampled leaves, or
-        ``None`` if ``copy=False``.
+        If ``copy=True`` (default), a new TreeData with the induced subtree on
+        the sampled leaves; otherwise ``None`` (the sampled tree is added to
+        ``tdata.obst[key_added]``).
 
     Raises:
         LeafSubsamplerError: On invalid parameters or sample size.
     """
-    _, tree_key = _get_digraph(tdata, tree_key)
+    tree, tree_key = _get_digraph(tdata, tree_key)
     if (ratio is None) == (number_of_leaves is None):
         raise LeafSubsamplerError("Specify exactly one of `ratio` or `number_of_leaves`.")
     if random_seed is not None:
         np.random.seed(random_seed)
 
-    leaves = list(tdata.obs_names)
+    leaves = _tree_leaves(tdata, tree)
     n_keep = number_of_leaves if number_of_leaves is not None else int(len(leaves) * ratio)
 
     if n_keep <= 0:
@@ -75,6 +103,29 @@ def sample_uniform(
     tdata.obst[key_added] = result.obst[tree_key]
 
 
+@overload
+def sample_spatial(
+    tdata: td.TreeData,
+    bounding_box: list[tuple] | None = None,
+    space: np.ndarray | None = None,
+    spatial_key: str = "spatial",
+    keep_root_edge: bool = True,
+    tree_key: str | None = None,
+    key_added: str = "sampled",
+    copy: Literal[True] = True,
+) -> td.TreeData: ...
+@overload
+def sample_spatial(
+    tdata: td.TreeData,
+    bounding_box: list[tuple] | None = None,
+    space: np.ndarray | None = None,
+    spatial_key: str = "spatial",
+    keep_root_edge: bool = True,
+    tree_key: str | None = None,
+    key_added: str = "sampled",
+    *,
+    copy: Literal[False],
+) -> None: ...
 def sample_spatial(
     tdata: td.TreeData,
     bounding_box: list[tuple] | None = None,
@@ -117,25 +168,27 @@ def sample_spatial(
             ``tdata.obst[key_added]`` in-place and return ``None``.
 
     Returns:
-        A new TreeData with spatially filtered leaves, or ``None`` if
-        ``copy=False``.
+        If ``copy=True`` (default), a new TreeData with the spatially filtered
+        leaves; otherwise ``None`` (the sampled tree is added to
+        ``tdata.obst[key_added]``).
 
     Raises:
         LeafSubsamplerError: On invalid parameters or empty region.
     """
-    _, tree_key = _get_digraph(tdata, tree_key)
+    tree, tree_key = _get_digraph(tdata, tree_key)
     if (bounding_box is None) == (space is None):
         raise LeafSubsamplerError("Specify exactly one of `bounding_box` or `space`.")
     if spatial_key not in tdata.obsm:
         raise LeafSubsamplerError(f"Spatial key `{spatial_key}` not present in tdata.obsm.")
 
-    leaves = list(tdata.obs_names)
+    leaves = _tree_leaves(tdata, tree)
     coords_raw = tdata.obsm[spatial_key]
     if isinstance(coords_raw, pd.DataFrame):
         coords_arr = coords_raw.values
     else:
         coords_arr = np.asarray(coords_raw)
-    leaf_coords = {leaf: coords_arr[i] for i, leaf in enumerate(leaves)}
+    position = {name: i for i, name in enumerate(tdata.obs_names)}
+    leaf_coords = {leaf: coords_arr[position[leaf]] for leaf in leaves}
 
     # Filter by region
     if bounding_box is not None:
@@ -337,6 +390,29 @@ def sample_supercellular(
     )
 
 
+@overload
+def sample_timepoints(
+    tdata: td.TreeData,
+    timepoints: dict[float, int],
+    keep_root_edge: bool = True,
+    random_seed: int | None = None,
+    tree_key: str | None = None,
+    time_key: str = "time",
+    key_added: str = "sampled",
+    copy: Literal[True] = True,
+) -> td.TreeData: ...
+@overload
+def sample_timepoints(
+    tdata: td.TreeData,
+    timepoints: dict[float, int],
+    keep_root_edge: bool = True,
+    random_seed: int | None = None,
+    tree_key: str | None = None,
+    time_key: str = "time",
+    key_added: str = "sampled",
+    *,
+    copy: Literal[False],
+) -> None: ...
 def sample_timepoints(
     tdata: td.TreeData,
     timepoints: dict[float, int],
@@ -365,8 +441,10 @@ def sample_timepoints(
     * ``tdata.obs["timepoint"]``: sampling timepoint for each cell.
     * ``tdata.obs``: other columns carried over for cells that were leaves in
       the input tree; ``NaN`` for cells sampled at intermediate timepoints.
-    * ``tdata.obsm``: character data from ``tdata.obsm`` for original leaves
-      or from node attributes for intermediate cells.
+    * ``tdata.obsm``: rows of ``tdata.obsm`` (DataFrames and arrays) for
+      original leaves, and node attributes of the same name for intermediate
+      cells. Entries without values for every sampled cell are dropped with a
+      warning.
 
     Args:
         tdata: TreeData with a tree in ``obst[tree_key]``.
@@ -384,21 +462,22 @@ def sample_timepoints(
             ``tdata.obst[key_added]`` in-place and return ``None``.
 
     Returns:
-        A new TreeData with one leaf per sampled cell and a ``"timepoint"``
-        column in ``obs``, or ``None`` if ``copy=False``.
+        If ``copy=True`` (default), a new TreeData with one leaf per sampled
+        cell and a ``"timepoint"`` column in ``obs``; otherwise ``None`` (the
+        sampled tree is added to ``tdata.obst[key_added]``).
 
     Raises:
-        LeafSubsamplerError: If the timepoints dict is empty, a requested
-            count exceeds the number of available cells, or no cells are
-            sampled.
+        LeafSubsamplerError: If the timepoints dict is empty, a node has no
+            time, a requested count exceeds the number of available cells, or
+            no cells are sampled.
     """
-    _, tree_key = _get_digraph(tdata, tree_key)
+    tree, tree_key = _get_digraph(tdata, tree_key)
     if not timepoints:
         raise LeafSubsamplerError("timepoints dict is empty.")
+    _check_node_attr(tree, time_key, LeafSubsamplerError)
     if random_seed is not None:
         np.random.seed(random_seed)
 
-    tree = tdata.obst[tree_key]
     original_leaves = set(tdata.obs_names)
 
     parent_times: dict[str, float] = {
@@ -426,7 +505,8 @@ def sample_timepoints(
         n_sample = timepoints[t]
         if n_sample == 0:
             continue
-        alive = [n for n in available if _alive_at(n, t)]
+        # Iterate in tree order, not set order (which varies between processes).
+        alive = [n for n in tree.nodes if n in available and _alive_at(n, t)]
         if len(alive) < n_sample:
             raise LeafSubsamplerError(
                 f"Only {len(alive)} cells alive at timepoint {t}, but {n_sample} were requested."
@@ -466,20 +546,23 @@ def sample_timepoints(
 
     # obsm: use tdata.obsm for original leaves; fall back to node attributes
     # for cells sampled at intermediate timepoints.
+    position = {name: i for i, name in enumerate(tdata.obs_names)}
     new_obsm: dict = {}
     for key, val in tdata.obsm.items():
-        if not isinstance(val, pd.DataFrame):
+        if not isinstance(val, (pd.DataFrame, np.ndarray)):
             continue
-        cols = list(val.columns)
-        rows: dict[str, list] = {}
-        for node in sampled_list:
-            if node in original_leaves:
-                rows[node] = list(val.loc[node])
-            elif key in tree.nodes.get(node, {}):
-                node_data = tree.nodes[node][key]
-                rows[node] = [node_data.get(col) for col in cols]
-        if rows:
-            new_obsm[key] = pd.DataFrame(rows, index=cols).T[cols]
+        rows = _obsm_rows(val, key, sampled_list, position, tree)
+        if rows is None:
+            warnings.warn(
+                f"obsm[{key!r}] is dropped: some cells sampled at intermediate timepoints "
+                f"have no {key!r} node attribute.",
+                LeafSubsamplerWarning,
+                stacklevel=2,
+            )
+        elif isinstance(val, pd.DataFrame):
+            new_obsm[key] = _rebuild_matrix(rows, val, sampled_list)[0]
+        else:
+            new_obsm[key] = np.asarray(rows)
 
     result = td.TreeData(
         obs=new_obs,
@@ -495,16 +578,71 @@ def sample_timepoints(
 # --- Private helpers ---
 
 
+def _tree_leaves(tdata: td.TreeData, tree: nx.DiGraph) -> list[str]:
+    """Observations of *tdata* that are leaves of *tree*, in ``obs_names`` order.
+
+    Differs from ``obs_names`` when observations include internal nodes
+    (``alignment="nodes"``) or cells of other trees.
+    """
+    return [name for name in tdata.obs_names if name in tree and tree.out_degree(name) == 0]
+
+
+def _obsm_rows(
+    val: pd.DataFrame | np.ndarray,
+    key: str,
+    nodes: list[str],
+    position: dict[str, int],
+    tree: nx.DiGraph,
+) -> list | None:
+    """Rows of the obsm entry *val* for *nodes*, or ``None`` if some are unavailable.
+
+    Observed nodes take their row of *val*; others take their node attribute
+    *key* (a sequence aligned with the columns, or a mapping keyed by column).
+    """
+    frame = val if isinstance(val, pd.DataFrame) else None
+    n_cols = val.shape[1] if val.ndim > 1 else None
+    rows = []
+    for node in nodes:
+        if node in position:
+            i = position[node]
+            rows.append(frame.iloc[i].tolist() if frame is not None else val[i])
+            continue
+        attr = tree.nodes[node].get(key) if node in tree else None
+        if isinstance(attr, Mapping) and frame is not None:
+            attr = [attr.get(col) for col in frame.columns]
+        if not hasattr(attr, "__len__") or isinstance(attr, str):  # missing or scalar
+            return None
+        if n_cols is not None and len(attr) != n_cols:
+            return None
+        rows.append(list(attr))
+    return rows
+
+
 def _prune_tdata(
     tdata: td.TreeData,
     keep_leaves: list[str],
     keep_root_edge: bool,
     tree_key: str,
 ) -> td.TreeData:
-    """Return new TreeData pruned to keep_leaves with unifurcations collapsed."""
-    sub = tdata[list(keep_leaves)].copy()
-    pruned = _collapse_unifurcations(sub.obst[tree_key], collapse_root=not keep_root_edge)
-    sub.obst[tree_key] = pruned
+    """Return new TreeData pruned to *keep_leaves*, collapsing unifurcations in every tree.
+
+    With ``alignment="nodes"`` the observations are tree nodes: the sampled
+    leaves, their ancestors kept after collapsing, and the nodes of other trees.
+    """
+    if tdata.alignment == "leaves":
+        sub = tdata[list(keep_leaves)].copy()
+    else:
+        tree = tdata.obst[tree_key]
+        keep = set(keep_leaves)
+        for leaf in keep_leaves:
+            keep |= nx.ancestors(tree, leaf)
+        sub = tdata[[name for name in tdata.obs_names if name in keep]].copy()
+    for key in list(sub.obst.keys()):
+        sub.obst[key] = _collapse_unifurcations(sub.obst[key], collapse_root=not keep_root_edge)
+    if tdata.alignment != "leaves":
+        # Drop the observations of internal nodes removed by collapsing.
+        nodes = set().union(*(sub.obst[key].nodes for key in sub.obst.keys()))
+        sub = sub[[name for name in sub.obs_names if name in nodes]].copy()
     return sub
 
 

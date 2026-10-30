@@ -257,8 +257,9 @@ def cluster_weighted_hamming(
     s1 = [list(s) if isinstance(s, tuple) else [s] for s in s1]
     s2 = [list(s) if isinstance(s, tuple) else [s] for s in s2]
 
-    result = 0
-    num_present = 0
+    # Floats throughout: numba cannot unify int and float distances.
+    result = 0.0
+    num_present = 0.0
     for i in range(len(s1)):
         c1, c2 = s1[i], s2[i]
 
@@ -267,7 +268,7 @@ def cluster_weighted_hamming(
         total = 0
         for _c1 in c1:
             for _c2 in c2:
-                d = 0
+                d = 0.0
 
                 total += 1
                 if _c1 != missing_state and _c2 != missing_state:
@@ -281,19 +282,19 @@ def cluster_weighted_hamming(
                             else:
                                 d += weights[i][_c2]
                         else:
-                            d += 1
+                            d += 1.0
                     else:
                         if weights:
                             d += weights[i][_c1] + weights[i][_c2]
                         else:
-                            d += 2
+                            d += 2.0
                 dissim.append(d)
 
         result += np.min(np.array(dissim))
         num_present += present / total
 
     if num_present == 0:
-        return 0
+        return 0.0
 
     return result / num_present
 

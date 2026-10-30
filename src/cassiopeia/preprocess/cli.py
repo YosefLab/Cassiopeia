@@ -4,8 +4,19 @@ from __future__ import annotations
 
 import argparse
 import sys
+from importlib.metadata import PackageNotFoundError, version
 
 import yaml
+
+from cassiopeia.mixins import PreprocessError
+
+
+def _version() -> str:
+    """Installed Cassiopeia version."""
+    try:
+        return version("cassiopeia-lineage")
+    except PackageNotFoundError:  # pragma: no cover
+        return "unknown"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -14,6 +25,8 @@ def main(argv: list[str] | None = None) -> int:
         prog="cassiopeia-preprocess",
         description="Cassiopeia lineage tracing preprocessing: reads -> allele table.",
     )
+    p.add_argument("--version", action="version", version=f"%(prog)s {_version()}")
+    p.add_argument("--debug", action="store_true", help="Show the full traceback on errors")
     sub = p.add_subparsers(dest="command", required=True)
 
     r = sub.add_parser(
@@ -42,8 +55,15 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("-o", "--output", required=True, help="Output parquet")
     c.add_argument("-c", "--construct", required=True)
     c.add_argument("--cells", help="Cell barcodes to keep (e.g. barcodes.tsv.gz)")
-    c.add_argument("--cb-tag", default="CB")
-    c.add_argument("--umi-tag", default="UB")
+    c.add_argument(
+        "--contigs",
+        nargs="+",
+        default=["auto"],
+        help="Contigs to read (default: auto, the construct's); 'all' scans every read",
+    )
+    c.add_argument("--sample", help="Sample name, stored in a `sample` column")
+    c.add_argument("--cb-tag", default="CB", help="Cell barcode tag; '' for bulk data")
+    c.add_argument("--umi-tag", default="UB", help="UMI tag; '' for data without UMIs")
     c.add_argument("--min-reads-per-umi", type=int, default=2, help="Drop UMIs with fewer reads")
     c.add_argument(
         "--no-collapse-umis",
@@ -52,6 +72,7 @@ def main(argv: list[str] | None = None) -> int:
         help="One row per UMI instead of one row per (cell, intBC, allele)",
     )
     c.add_argument("-t", "--threads", type=int)
+    c.add_argument("--plot", help="Save a QC figure to this path")
 
     b = sub.add_parser("build-reference", help="Write FASTA/GTF and STARsolo/Cell Ranger commands.")
     b.add_argument("construct")
@@ -65,6 +86,18 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("example-config", help="Print an example run config.")
 
     args = p.parse_args(argv)
+    try:
+        _run(args)
+    except (PreprocessError, ValueError, OSError, ImportError, yaml.YAMLError) as e:
+        if args.debug:
+            raise
+        print(f"cassiopeia-preprocess: error: {e}", file=sys.stderr)
+        return 1
+    return 0
+
+
+def _run(args: argparse.Namespace) -> None:
+    """Run a parsed command."""
     if args.command == "run":
         from .pipeline import run
 
@@ -89,16 +122,20 @@ def main(argv: list[str] | None = None) -> int:
     elif args.command == "call-alleles":
         from .alleles import call_alleles
 
+        contigs = {"auto": "auto", "all": None}.get(" ".join(args.contigs), args.contigs)
         df = call_alleles(
             args.bam,
             args.construct,
             cells=args.cells,
+            contigs=contigs,
+            sample=args.sample,
             cb_tag=args.cb_tag or None,
             umi_tag=args.umi_tag or None,
             min_reads_per_umi=args.min_reads_per_umi,
             collapse_umis=args.collapse_umis,
             n_threads=args.threads,
             plot=False,
+            save=args.plot,
         )
         df.to_parquet(args.output)
     elif args.command == "build-reference":
@@ -120,7 +157,6 @@ def main(argv: list[str] | None = None) -> int:
         from .pipeline import EXAMPLE_CONFIG
 
         print(EXAMPLE_CONFIG)
-    return 0
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -126,12 +126,14 @@ def test_priors_stored_for_h5td_and_solvers(tdata, tmp_path):
     stochastic_tracing(
         tdata, number_of_cassettes=2, size_of_cassette=3, state_priors=priors, random_seed=0
     )
-    expected = {str(i): priors[i % 3] for i in range(6)}
+    columns = tdata.obsm["characters"].columns
+    expected = {col: priors[i % 3] for i, col in enumerate(columns)}
     assert tdata.uns["priors"] == expected
     tdata.write_h5td(tmp_path / "sim.h5td")
     back = td.read_h5td(tmp_path / "sim.h5td")
     assert back.uns["priors"] == expected
-    assert _resolve_priors(back) == {i: {i % 3 + 1: 1.0} for i in range(6)}
+    resolved = _resolve_priors(back, characters=back.obsm["characters"])
+    assert resolved == {i: {str(i % 3 + 1): 1.0} for i in range(6)}
     cas.solver.greedy(back, priors=True)
     assert "greedy" in back.obst
 
@@ -628,6 +630,10 @@ def test_composed_pipeline(tdata):
     assert df.shape == (8, 6)
     assert list(df.columns) == ["0-0", "0-1", "1-0", "1-1", "2-0", "2-1"]
     assert set(df.values.flatten()).issubset({"-", "*", "1", "2", "3"})
+    # Subsetting drops unused categories column by column; no state may become NaN.
+    sub = tdata[tdata.obs_names[:3]].copy()
+    missing_data(sub, stochastic_rate=0.5, random_seed=0)
+    assert not sub.obsm["characters"].isna().any().any()
 
 
 # ---------------------------------------------------------------------------

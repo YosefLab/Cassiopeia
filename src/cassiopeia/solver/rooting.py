@@ -2,9 +2,9 @@
 
 Procedures are registered by name and operate on an (unrooted) tree graph,
 returning a rooted :class:`~networkx.DiGraph`.  They are used both by
-:func:`cassiopeia.solver.nj` (via :func:`apply`, on the complete undirected NJ
-graph) and by :func:`reroot` (to re-root an already-built tree).  Custom
-procedures can be added via :func:`register`.
+:func:`cassiopeia.solver.nj` (``root=``, on the complete undirected NJ graph)
+and by :func:`reroot` (to re-root an already-built tree).  Custom procedures can
+be added via :func:`register`.
 
 Available procedures: ``outgroup``, ``midpoint``, ``centroid``, ``shared_mutation``.
 """
@@ -46,11 +46,12 @@ def register(name: str) -> Callable:
     return decorator
 
 
-def _default_root(data: CassiopeiaTree | TreeData) -> str:
+def _default_root(data: CassiopeiaTree | TreeData) -> str | None:
+    """A CassiopeiaTree's ``root_sample_name``; ``None`` for a TreeData."""
     from treedata import TreeData
 
     if isinstance(data, TreeData):
-        return list(data.obs_names)[0]
+        return None
     if data.root_sample_name is None:
         raise DistanceSolverError(
             "No root is set on the CassiopeiaTree. Set root_sample_name or pass root='outgroup'."
@@ -116,7 +117,7 @@ def _leaf_side_counts(undirected: nx.Graph, leaf_attr: dict[str, int] | None = N
 
 def reroot_on_edge(
     graph: nx.DiGraph,
-    new_root,
+    new_root: str | None,
     best_edge,
     length_key: str = "length",
     position: float = 0.5,
@@ -126,9 +127,23 @@ def reroot_on_edge(
     Node and edge attributes are preserved; the previous root and any resulting
     unifurcations are collapsed (summing branch lengths). If *best_edge* has a
     numeric ``length_key`` attribute, it is split between the two new root edges,
-    with fraction *position* on the side of ``best_edge[0]``.
+    with fraction *position* on the side of ``best_edge[0]``. If *new_root* is
+    ``None``, the new root is named ``"root"``, or ``"root_<i>"`` if a node of
+    the rooted tree is already named ``"root"``.
+
+    Raises:
+        ValueError: If *new_root* is already a node of *graph*.
     """
     from cassiopeia.utils import _collapse_unifurcations
+
+    if new_root is not None and new_root in graph:
+        raise ValueError(f"new_root {new_root!r} is already a node of the tree.")
+    auto_name = new_root is None
+    if auto_name:
+        new_root, i = "root", 0
+        while new_root in graph:
+            i += 1
+            new_root = f"root_{i}"
 
     undirected = graph.to_undirected()
     u, v = best_edge
@@ -153,7 +168,11 @@ def reroot_on_edge(
         rooted[new_root][u][length_key] = position * length
         rooted[new_root][v][length_key] = (1 - position) * length
 
-    return _collapse_unifurcations(rooted, collapse_root=True)
+    rooted = _collapse_unifurcations(rooted, collapse_root=True)
+    if auto_name and new_root != "root" and "root" not in rooted:
+        # The old root named "root" (e.g. from nj) was collapsed: reuse its name.
+        nx.relabel_nodes(rooted, {new_root: "root"}, copy=False)
+    return rooted
 
 
 # ── Procedures ────────────────────────────────────────────────────────────────
@@ -205,16 +224,12 @@ def outgroup(
         )
     internal = neighbors[0]
 
-    root_name = "root"
-    while root_name in graph.nodes:
-        root_name = root_name + "_internal"
-
-    return reroot_on_edge(graph, root_name, (outgroup, internal), length_key=length_key)
+    return reroot_on_edge(graph, None, (outgroup, internal), length_key=length_key)
 
 
 @register("midpoint")
 def midpoint(
-    graph: nx.Graph, length_key: str = "length", new_root: str = "root", **kwargs
+    graph: nx.Graph, length_key: str = "length", new_root: str | None = None, **kwargs
 ) -> nx.DiGraph:
     """Root at the midpoint of the longest leaf-to-leaf path.
 
@@ -226,7 +241,8 @@ def midpoint(
     Args:
         graph: Tree graph (rooted or unrooted).
         length_key: Edge attribute holding branch lengths.
-        new_root: Name for the inserted root node.
+        new_root: Name for the inserted root node (default ``"root"``, or
+            ``"root_<i>"`` if taken).
         kwargs: Keyword arguments.
 
     Returns:
@@ -271,7 +287,7 @@ def midpoint(
 
 @register("centroid")
 def centroid(
-    graph: nx.Graph, new_root: str = "root", length_key: str = "length", **kwargs
+    graph: nx.Graph, new_root: str | None = None, length_key: str = "length", **kwargs
 ) -> nx.DiGraph:
     """Root on the edge that most evenly splits the leaves.
 
@@ -280,7 +296,8 @@ def centroid(
 
     Args:
         graph: Tree graph (rooted or unrooted).
-        new_root: Name for the inserted root node.
+        new_root: Name for the inserted root node (default ``"root"``, or
+            ``"root_<i>"`` if taken).
         length_key: Edge attribute holding branch lengths.
         kwargs: Keyword arguments.
 
@@ -333,7 +350,7 @@ def _get_mutation_outgroup(characters: pd.DataFrame, missing_state=-1, unedited_
 def shared_mutation(
     graph: nx.Graph,
     characters: pd.DataFrame = None,
-    new_root: str = "root",
+    new_root: str | None = None,
     missing_state=-1,
     unedited_state=0,
     length_key: str = "length",
@@ -349,7 +366,8 @@ def shared_mutation(
     Args:
         graph: Tree graph (rooted or unrooted).
         characters: Character matrix indexed by leaf name.
-        new_root: Name for the inserted root node.
+        new_root: Name for the inserted root node (default ``"root"``, or
+            ``"root_<i>"`` if taken).
         missing_state: Value (or sequence of values) representing missing data.
         unedited_state: Value (or sequence of values) representing the unedited
             state.
@@ -412,8 +430,9 @@ def reroot(
     without it take their length from the ``time_key`` node attribute (only one
     is needed), or unit length if neither is available. Lengths are preserved
     across the re-rooting (the root edge is split, and the old root is collapsed
-    by summing its edges). If the input tree has node times, they are
-    recomputed as the distance from the new root, offset by the old root's time.
+    by summing its edges). A unifurcating root and its branch are removed first.
+    If the input tree has node times, they are recomputed as the distance from
+    the new root, offset by the old root's time.
 
     Args:
         tdata: TreeData containing the tree to re-root.
@@ -455,9 +474,17 @@ def reroot(
     tdata = tdata.copy() if copy else tdata
     g, tree_key = _get_digraph(tdata, tree_key, copy=True)
 
+    # A unifurcating root (e.g. of simulated trees) would be a leaf of the
+    # unrooted tree, so its branch is dropped.
+    root = next(n for n in g if g.in_degree(n) == 0)
+    while g.out_degree(root) == 1 and len(g) > 2:
+        child = next(iter(g.successors(root)))
+        g.remove_node(root)
+        root = child
+
     has_time = all(time_key in d for _, d in g.nodes(data=True))
     if has_time:
-        root_time = g.nodes[next(n for n in g if g.in_degree(n) == 0)][time_key]
+        root_time = g.nodes[root][time_key]
         for u, v, d in g.edges(data=True):
             if length_key not in d:
                 d[length_key] = g.nodes[v][time_key] - g.nodes[u][time_key]

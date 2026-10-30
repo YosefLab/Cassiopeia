@@ -189,10 +189,21 @@ def test_resolve_priors_matches_matrix_states(column, expected):
     assert all(type(k) is type(e) for k, e in zip(resolved[0], expected, strict=True))
 
 
+def test_priors_follow_column_names():
+    chars = pd.DataFrame({"x": ["1", "*"], "y": ["2", np.nan]}, index=["a", "b"])
+    tdata = TreeData(obs=pd.DataFrame(index=chars.index), obsm={"characters": chars})
+    tdata.uns["priors"] = utils._format_priors({0: {"1": 0.5}, 1: {"2": 0.25}}, chars.columns)
+    assert utils._resolve_priors(tdata, characters=chars[["y"]]) == {0: {"2": 0.25}}
+    # Empty entries are missing data.
+    tdata.uns["missing_state"] = "-"
+    assert utils._get_characters(tdata).loc["b", "y"] == "-"
+
+
 def test_stored_priors_round_trip_h5td(tmp_path):
     chars = pd.DataFrame({"c0": ["*", "1"], "c1": ["2", "-"]}, index=["a", "b"])
     tdata = TreeData(obs=pd.DataFrame(index=chars.index), obsm={"characters": chars})
-    tdata.uns["priors"] = utils._format_priors([{"1": 0.5}, {"2": 1.0}])
+    tdata.uns["priors"] = utils._format_priors([{"1": 0.5}, {"2": 1.0}], chars.columns)
+    assert set(tdata.uns["priors"]) == {"c0", "c1"}
     tdata.write_h5td(tmp_path / "t.h5td")
     back = td.read_h5td(tmp_path / "t.h5td")
     expected = {0: {"1": 0.5}, 1: {"2": 1.0}}
@@ -227,5 +238,5 @@ def test_node_name_generator_unique_with_coarse_clock(monkeypatch):
     gen = utils._node_name_generator()
     names = [next(gen) for _ in range(1000)]
     assert len(set(names)) == len(names)
-    assert all(name.startswith("cassiopeia_internal_node") for name in names)
+    assert all(name.startswith("internal_") for name in names)
     assert next(utils._node_name_generator()) not in names

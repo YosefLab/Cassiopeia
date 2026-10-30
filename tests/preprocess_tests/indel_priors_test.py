@@ -72,7 +72,7 @@ class TestIndelPriors(unittest.TestCase):
         self.alleletable_conflict = pd.DataFrame.from_dict(at_dict)
 
     def test_compute_indel_priors(self):
-        indel_probabilities = cas.pp.compute_indel_priors(self.alleletable_basic)
+        indel_probabilities = cas.pp.compute_indel_priors(self.alleletable_basic, per_site=False)
 
         expected_priors = pd.DataFrame.from_dict(
             {
@@ -96,7 +96,7 @@ class TestIndelPriors(unittest.TestCase):
             )
 
     def test_compute_indel_priors_with_conflicts(self):
-        indel_probabilities = cas.pp.compute_indel_priors(self.alleletable_conflict)
+        indel_probabilities = cas.pp.compute_indel_priors(self.alleletable_conflict, per_site=False)
 
         expected_priors = pd.DataFrame.from_dict(
             {
@@ -122,7 +122,7 @@ class TestIndelPriors(unittest.TestCase):
 
     def test_compute_indel_priors_multiple_variables(self):
         indel_probabilities = cas.pp.compute_indel_priors(
-            self.allele_table_mouse, grouping_variables=["Mouse", "intBC"]
+            self.allele_table_mouse, grouping_variables=["Mouse", "intBC"], per_site=False
         )
 
         expected_priors = pd.DataFrame.from_dict(
@@ -160,7 +160,7 @@ class TestIndelPriors(unittest.TestCase):
 
         # make sure permuting grouping variables doesn't change result
         indel_probabilities = cas.pp.compute_indel_priors(
-            self.allele_table_mouse, grouping_variables=["intBC", "Mouse"]
+            self.allele_table_mouse, grouping_variables=["intBC", "Mouse"], per_site=False
         )
 
         for indel in expected_priors.index:
@@ -180,6 +180,7 @@ class TestIndelPriors(unittest.TestCase):
             noncassiopeia_at,
             grouping_variables=["Mouse", "intBC"],
             cut_sites=["cs1", "cs2", "cs3"],
+            per_site=False,
         )
 
         expected_priors = pd.DataFrame.from_dict(
@@ -217,7 +218,7 @@ class TestIndelPriors(unittest.TestCase):
 
         # make sure permuting grouping variables doesn't change result
         indel_probabilities = cas.pp.compute_indel_priors(
-            self.allele_table_mouse, grouping_variables=["intBC", "Mouse"]
+            self.allele_table_mouse, grouping_variables=["intBC", "Mouse"], per_site=False
         )
 
         for indel in expected_priors.index:

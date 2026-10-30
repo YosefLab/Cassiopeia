@@ -93,6 +93,12 @@ def test_uniform_number_of_leaves():
     sub = sample_uniform(tdata, number_of_leaves=4, random_seed=1)
     assert len(sub.obs_names) == 4
     assert set(sub.obs_names) <= set(tdata.obs_names)
+    # With alignment="nodes" only leaves are sampled; obs follow the pruned tree.
+    nodes = td.TreeData(obst={"simulated": tdata.obst["simulated"]}, alignment="nodes")
+    sub = sample_uniform(nodes, number_of_leaves=4, random_seed=1)
+    tree = sub.obst["simulated"]
+    assert sum(tree.out_degree(n) == 0 for n in tree) == 4
+    assert set(sub.obs_names) == set(tree.nodes)
 
 
 def test_uniform_ratio():

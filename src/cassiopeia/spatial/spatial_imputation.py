@@ -1,5 +1,7 @@
 """Functionality for spatial imputation."""
 
+from typing import Literal, overload
+
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -90,6 +92,37 @@ def _build_spatial_nx_graph(tdata: TreeData, connect_key: str) -> nx.Graph:
     return nx.relabel_nodes(graph, node_map)
 
 
+@overload
+def impute_alleles_spatial(
+    tdata: TreeData,
+    connect_key: str | None = None,
+    characters_key: str = "characters",
+    spatial_key: str | None = None,
+    imputation_hops: int = 2,
+    imputation_concordance: float = 0.8,
+    num_imputation_iterations: int = 1,
+    max_neighbor_distance: float = np.inf,
+    missing_state=None,
+    unmodified_state=None,
+    key_added: str = "characters_imputed",
+    copy: Literal[False] = False,
+) -> None: ...
+@overload
+def impute_alleles_spatial(
+    tdata: TreeData,
+    connect_key: str | None = None,
+    characters_key: str = "characters",
+    spatial_key: str | None = None,
+    imputation_hops: int = 2,
+    imputation_concordance: float = 0.8,
+    num_imputation_iterations: int = 1,
+    max_neighbor_distance: float = np.inf,
+    missing_state=None,
+    unmodified_state=None,
+    key_added: str = "characters_imputed",
+    *,
+    copy: Literal[True],
+) -> TreeData: ...
 def impute_alleles_spatial(
     tdata: TreeData,
     connect_key: str | None = None,
@@ -127,15 +160,16 @@ def impute_alleles_spatial(
         connect_key: Key in ``tdata.obsp`` for the spatial connectivity graph.
             Required; raises ``ValueError`` if ``None``.
         characters_key: Key in ``tdata.obsm`` for the character matrix.
-        spatial_key: Key in ``tdata.obsm`` for spatial coordinates. Required only
-            when ``max_neighbor_distance < inf``.
+        spatial_key: Key in ``tdata.obsm`` for spatial coordinates. Required
+            when ``max_neighbor_distance`` is finite.
         imputation_hops: Number of BFS hops used to gather neighbor votes.
         imputation_concordance: Minimum fraction of neighbor votes required to
             accept an imputation.
         num_imputation_iterations: Number of imputation rounds (enables
             multi-hop propagation of imputed values).
         max_neighbor_distance: Maximum Euclidean distance to a neighbor for it
-            to contribute a vote. Requires ``spatial_key``.
+            to contribute a vote. Requires ``spatial_key``; raises
+            ``ValueError`` without it.
         missing_state: Value(s) representing missing data. May be a scalar or a
             sequence. Defaults to ``tdata.uns["missing_state"]`` if present,
             otherwise ``(-1, "-1", "NA", "-")``.
@@ -148,14 +182,23 @@ def impute_alleles_spatial(
         copy: If ``True``, return a copy of ``tdata`` instead of modifying in-place.
 
     Returns:
-        ``None`` when ``copy=False`` (modifies ``tdata`` in-place), or the modified
-        copy when ``copy=True``.
+        If ``copy=True``, a new TreeData; otherwise ``None`` (``tdata`` is
+        modified in place).
+
+    Raises:
+        ValueError: If ``connect_key`` is missing, or ``max_neighbor_distance``
+            is finite without ``spatial_key``.
     """
     if connect_key is None:
         raise ValueError(
             "connect_key must be provided. First compute a spatial connectivity graph "
             "with squidpy.gr.spatial_neighbors(adata, key_added=...) and store the "
             "result in tdata.obsp, then pass the key here."
+        )
+    if np.isfinite(max_neighbor_distance) and spatial_key is None:
+        raise ValueError(
+            "max_neighbor_distance requires spatial coordinates: pass spatial_key, the "
+            "tdata.obsm key holding them."
         )
 
     if copy:

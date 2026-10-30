@@ -6,7 +6,7 @@ import itertools
 import random
 import secrets
 import warnings
-from collections.abc import Generator, Mapping
+from collections.abc import Generator, Mapping, Sequence
 from typing import Any
 
 import networkx as nx
@@ -25,9 +25,13 @@ from cassiopeia.mixins.logging import logger
 def _get_characters(
     tree: CassiopeiaTree | TreeData,
     key: str | None = None,
+    missing_state=None,
     **kwargs,
 ) -> pd.DataFrame | None:
     """Return the character matrix from a tree-like object.
+
+    Empty (NaN/None) entries of a TreeData's matrix are treated as missing data
+    (see :func:`_fill_missing`).
 
     Args:
         tree: A :class:`~cassiopeia.data.CassiopeiaTree`, :class:`~treedata.TreeData`,
@@ -35,6 +39,8 @@ def _get_characters(
         key: For :class:`~treedata.TreeData`, the ``obsm`` key to look up
             (default ``"characters"``).  For :class:`~cassiopeia.data.CassiopeiaTree`,
             the layer name (default: the primary character matrix).
+        missing_state: Missing state used for empty entries; ``None`` uses
+            ``tree.uns["missing_state"]``.
         kwargs: Deprecated argument ``layer`` is also accepted as an alias for ``key`` for backward compatibility.
 
     Returns:
@@ -63,8 +69,49 @@ def _get_characters(
 
     if characters is None and isinstance(tree, TreeData):
         raise ValueError(f"No character matrix found; store characters in obsm[{key}]")
+    if isinstance(tree, TreeData):
+        if missing_state is None:
+            missing_state = tree.uns.get("missing_state", None)
+        characters = _fill_missing(characters, missing_state)
 
     return characters
+
+
+def _fill_missing(characters: pd.DataFrame, missing_state=None) -> pd.DataFrame:
+    """Replace empty (NaN/None) entries of a character matrix by the missing state.
+
+    The fill value is *missing_state* (its first integer value for a numeric
+    matrix if it is a sequence), or ``-1`` for numeric and ``"-"`` for other
+    matrices. Numeric matrices of whole numbers become integer. Returns
+    *characters* itself when it has no empty entries.
+    """
+    mask = characters.isna().to_numpy()
+    if not mask.any():
+        return characters
+    values = characters.to_numpy(dtype=object)
+    observed = values[~mask]
+    numeric = all(
+        isinstance(v, (int, float, np.number)) and not isinstance(v, (bool, np.bool_))
+        for v in observed
+    )
+    if missing_state is None:
+        candidates = []
+    elif isinstance(missing_state, (list, tuple, set)):
+        candidates = list(missing_state)
+    else:
+        candidates = [missing_state]
+    if numeric:
+        ints = [int(c) for c in candidates if str(c).lstrip("-").isdigit()]
+        fill = ints[0] if ints else -1
+    else:
+        fill = str(candidates[0]) if candidates else "-"
+    values[mask] = fill
+    out = pd.DataFrame(values, index=characters.index, columns=characters.columns)
+    if numeric:
+        out = out.astype(float)
+        if np.all(np.mod(out.to_numpy(), 1) == 0):
+            out = out.astype(np.int64)
+    return out
 
 
 def _get_digraph(
@@ -125,6 +172,21 @@ def _get_digraph(
         t = t.copy()
 
     return t, tree_key
+
+
+def _check_leaf_alignment(tdata) -> None:
+    """Raise a clear error if a solver is given a TreeData aligned to all nodes.
+
+    Solvers treat every observation as a cell to place at a leaf, so the
+    observations of internal nodes (``alignment="nodes"``) must be removed first.
+    """
+    if isinstance(tdata, TreeData) and tdata.alignment == "nodes":
+        raise ValueError(
+            "Tree reconstruction needs a TreeData with one observation per cell, but "
+            "tdata.alignment is 'nodes'. Subset it to the leaves first, e.g. "
+            "leaves = cas.tl.get_leaves(tdata); tdata.alignment = 'leaves'; "
+            "tdata = tdata[leaves].copy()."
+        )
 
 
 def _set_tree(data: CassiopeiaTree | TreeData, g: nx.DiGraph, tree_key: str | None = None):
@@ -328,16 +390,18 @@ def _get_parameter(tree: CassiopeiaTree | TreeData, param_name: str, value=None)
 
 # Priors convention (every module follows it):
 #
-# * Stored in ``tdata.uns["priors"]`` as ``{"<character index>": {"<state>": p}}``
-#   with string keys, because h5ad/h5td cannot store integer keys or lists of
-#   dicts. Write them with :func:`_format_priors`.
+# * Stored in ``tdata.uns["priors"]`` as ``{"<character name>": {"<state>": p}}``,
+#   keyed by the column names of the character matrix, so they stay matched to
+#   their characters after columns are subset or reordered. Keys and states are
+#   strings because h5ad/h5td cannot store integer keys or lists of dicts. Write
+#   them with :func:`_format_priors`.
 # * Functions that take ``priors`` accept ``None`` (stored priors if present),
 #   ``True`` (stored priors, required), ``False`` (none) or priors in any form
-#   (dict with integer or string keys, or a list of per-character dicts), and
-#   read them with :func:`_resolve_priors`.
-# * Resolved priors are keyed by integer character index, and their states are
-#   the character matrix's own values, so ``priors[i][value]`` works for string,
-#   integer, float and ambiguous (tuple) matrices alike.
+#   (dict keyed by character name or integer position, or a list of
+#   per-character dicts), and read them with :func:`_resolve_priors`.
+# * Resolved priors are keyed by integer character position, and their states
+#   are the character matrix's own values, so ``priors[i][value]`` works for
+#   string, integer, float and ambiguous (tuple) matrices alike.
 
 
 def _priors_by_character(priors) -> dict:
@@ -360,16 +424,21 @@ def _priors_by_character(priors) -> dict:
     return out
 
 
-def _format_priors(priors) -> dict[str, dict[str, float]]:
-    """Priors in the stored form: ``{"<character index>": {"<state>": p}}``.
+def _format_priors(priors, columns: Sequence | None = None) -> dict[str, dict[str, float]]:
+    """Priors in the stored form: ``{"<character name>": {"<state>": p}}``.
 
-    Accepts the same forms as :func:`_resolve_priors`. String keys let the
+    Accepts the same forms as :func:`_resolve_priors`. Integer keys are
+    positions in *columns* (the character matrix's column names) and are
+    replaced by the column name; other keys are kept. String keys let the
     TreeData be written to h5ad/h5td.
     """
-    return {
-        str(k): {str(s): float(p) for s, p in states.items()}
-        for k, states in _priors_by_character(priors).items()
-    }
+    columns = list(columns) if columns is not None else []
+    out = {}
+    for k, states in _priors_by_character(priors).items():
+        if isinstance(k, int) and 0 <= k < len(columns):
+            k = columns[k]
+        out[str(k)] = {str(s): float(p) for s, p in states.items()}
+    return out
 
 
 def _match_prior_states(states: Mapping, values) -> dict:
@@ -414,12 +483,14 @@ def _resolve_priors(
             CassiopeiaTree) if present, logging a message, and otherwise no
             priors. ``True`` requires stored priors and raises if there are none.
             ``False`` disables priors. Priors given directly may be a dict
-            (integer or string keys) or a list of per-character dicts.
-        characters: The character matrix the priors refer to. Its values become
-            the state keys; without it, digit-string states become integers.
+            keyed by character (column) name or integer position, or a list of
+            per-character dicts.
+        characters: The character matrix the priors refer to. Its column names
+            match name-keyed priors and its values become the state keys;
+            without it, digit-string keys and states become integers.
 
     Returns:
-        Priors keyed by integer character index, then by state, or ``None`` when
+        Priors keyed by integer character position, then by state, or ``None`` when
         disabled or unavailable.
 
     Raises:
@@ -441,6 +512,13 @@ def _resolve_priors(
         if priors is None:
             logger.info("Using priors from tdata.uns['priors']; pass priors=False to ignore them.")
         priors = stored
+    if isinstance(priors, Mapping) and characters is not None:
+        # Keyed by character name when any key names a column: characters of
+        # other matrices (or removed by subsetting) are skipped. Otherwise keys
+        # are positions (lists, and integer or digit-string keys).
+        position = {str(c): i for i, c in enumerate(characters.columns)}
+        if any(str(k) in position for k in priors):
+            priors = {position[str(k)]: v for k, v in priors.items() if str(k) in position}
     by_char = _priors_by_character(priors)
     columns = list(characters.columns) if characters is not None else []
     out = {}
@@ -503,16 +581,37 @@ def _get_node_data(g: nx.DiGraph, key: str) -> pd.Series:
 
 
 def _node_name_generator() -> Generator[str, None, None]:
-    """Yield unique internal node names for building reconstructed trees.
+    """Yield unique temporary internal node names for building reconstructed trees.
 
-    Names combine a random prefix, drawn once per generator, with a counter: they
+    Solvers rename the nodes with :func:`_name_internal_nodes` when done. Names
+    combine a random prefix, drawn once per generator, with a counter: they
     are unique within a generator and, with high probability, across generators.
     (Hashing ``time.time()`` repeated names on platforms with a coarse clock, such
     as macOS, which turned reconstructed trees into graphs with merged nodes.)
     """
     prefix = secrets.token_hex(8)
     for i in itertools.count():
-        yield f"cassiopeia_internal_node{prefix}{i}"
+        yield f"internal_{prefix}_{i}"
+
+
+def _name_internal_nodes(g: nx.DiGraph, samples) -> nx.DiGraph:
+    """Name a reconstructed tree's nodes ``root``, ``node1``, ``node2``, ...
+
+    Nodes in *samples* keep their names. The others are numbered in depth-first
+    (preorder) order from the root, so the names are reproducible. If a sample
+    already has one of the names, ``_`` is appended to the prefixes until none
+    clash.
+    """
+    samples = set(samples)
+    root = _get_root(g)
+    internal = [n for n in nx.dfs_preorder_nodes(g, root) if n not in samples]
+    root_name, prefix = "root", "node"
+    while True:
+        names = [root_name if n == root else f"{prefix}{i}" for i, n in enumerate(internal)]
+        if samples.isdisjoint(names):
+            break
+        root_name, prefix = root_name + "_", prefix + "_"
+    return nx.relabel_nodes(g, dict(zip(internal, names, strict=True)))
 
 
 # Smallest "negative_log" weight: -log(1) = 0 would make the solvers ignore a state

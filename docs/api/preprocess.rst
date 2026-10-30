@@ -26,9 +26,25 @@ sharing the same edit calls depending on the value of ``collapse_umis``.
 Quality control and filtering of the **allele table** are performed using the
 functions below. Each function flags low quality data using a ``pass_*`` column
 rather than filtering, and most draw QC plots to help select thresholds.
+:func:`~cassiopeia.pp.run` runs them in this order:
+:func:`~cassiopeia.pp.correct_intbcs`, :func:`~cassiopeia.pp.filter_alleles`,
+:func:`~cassiopeia.pp.filter_cells`, :func:`~cassiopeia.pp.call_clones` (only
+for data with several clones), :func:`~cassiopeia.pp.filter_integrations`,
+optionally :func:`~cassiopeia.pp.filter_cells` with ``min_intbc_frac``, and
+:func:`~cassiopeia.pp.filter_doublets`. :func:`~cassiopeia.pp.filter_doublets`
+and :func:`~cassiopeia.pp.filter_integrations` can run in either order;
+running :func:`~cassiopeia.pp.filter_doublets` first keeps doublets out of the
+integrations' conflict rates.
 
 Finally the **character matrix** is constructed from the filtered allele
 table using :func:`~cassiopeia.pp.alleles_to_characters`.
+
+Each allele table holds one sample. The steps identify cells by ``cellBC``
+alone and need the categorical columns and ``df.attrs`` that ``pd.concat``
+drops, so do not concatenate the allele tables of several samples. Process
+each sample separately and combine the character matrices instead, with
+``mapping="allele"`` (or a shared dict) so that states mean the same in every
+sample, and with unique cell names (e.g. prefixed with the sample name).
 
 Running the pipeline
 ~~~~~~~~~~~~~~~~~~~~

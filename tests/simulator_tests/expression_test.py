@@ -17,20 +17,32 @@ N_GENES = 50
 
 def test_brownian_shape_and_latent(lineage_tree):
     n_leaves = lineage_tree.n_obs
+    lineage_tree.obsp["graph"] = np.eye(n_leaves)
     out = brownian_expression(lineage_tree, latent_dim=8, n_genes=N_GENES, random_seed=0)
-    assert out.X.shape == (n_leaves, N_GENES)
-    assert out.obsm["X_latent"].shape == (n_leaves, 8)
+    assert out is None  # modified in place
+    assert lineage_tree.X.shape == (n_leaves, N_GENES)
+    assert lineage_tree.obsm["X_latent"].shape == (n_leaves, 8)
+    assert "graph" in lineage_tree.obsp
+    # Rerunning on the output replaces the genes.
+    brownian_expression(lineage_tree, latent_dim=8, n_genes=N_GENES + 5, random_seed=0)
+    assert lineage_tree.X.shape == (n_leaves, N_GENES + 5)
 
 
 def test_brownian_deterministic(lineage_tree):
-    a = brownian_expression(lineage_tree, latent_dim=8, n_genes=N_GENES, random_seed=7)
-    b = brownian_expression(lineage_tree, latent_dim=8, n_genes=N_GENES, random_seed=7)
+    a = brownian_expression(lineage_tree, latent_dim=8, n_genes=N_GENES, random_seed=7, copy=True)
+    b = brownian_expression(lineage_tree, latent_dim=8, n_genes=N_GENES, random_seed=7, copy=True)
+    assert "X_latent" not in lineage_tree.obsm  # input untouched with copy=True
     np.testing.assert_array_equal(np.asarray(a.X), np.asarray(b.X))
 
 
 def test_brownian_gaussian_is_continuous(lineage_tree):
     out = brownian_expression(
-        lineage_tree, latent_dim=8, n_genes=N_GENES, distribution="gaussian", random_seed=0
+        lineage_tree,
+        latent_dim=8,
+        n_genes=N_GENES,
+        distribution="gaussian",
+        random_seed=0,
+        copy=True,
     )
     X = np.asarray(out.X)
     assert np.issubdtype(X.dtype, np.floating)
@@ -48,6 +60,7 @@ def test_brownian_counts(lineage_tree, distribution):
         distribution=distribution,
         library_size=library_size,
         random_seed=0,
+        copy=True,
     )
     X = np.asarray(out.X)
     assert np.issubdtype(X.dtype, np.integer)
@@ -58,7 +71,7 @@ def test_brownian_counts(lineage_tree, distribution):
 
 def test_brownian_layer_added(lineage_tree):
     out = brownian_expression(
-        lineage_tree, latent_dim=8, n_genes=N_GENES, layer_added="counts", random_seed=0
+        lineage_tree, latent_dim=8, n_genes=N_GENES, layer_added="counts", random_seed=0, copy=True
     )
     assert "counts" in out.layers
     assert out.layers["counts"].shape == (lineage_tree.n_obs, N_GENES)
@@ -82,15 +95,19 @@ def test_brownian_bad_params(lineage_tree):
 
 def test_trajectory_shape_and_latent(lineage_tree, trajectory):
     n_leaves = lineage_tree.n_obs
-    out = trajectory_expression(lineage_tree, trajectory, n_genes=N_GENES, random_seed=0)
-    assert out.X.shape == (n_leaves, N_GENES)
+    lineage_tree.obst["other"] = lineage_tree.obst["simulated"].copy()
+    out = trajectory_expression(
+        lineage_tree, trajectory, n_genes=N_GENES, random_seed=0, tree_key="simulated"
+    )
+    assert out is None  # modified in place
+    assert lineage_tree.X.shape == (n_leaves, N_GENES)
     # latent_dim inferred from the fate tree (5).
-    assert out.obsm["X_latent"].shape == (n_leaves, 5)
+    assert lineage_tree.obsm["X_latent"].shape == (n_leaves, 5)
 
 
 def test_trajectory_deterministic(lineage_tree, trajectory):
-    a = trajectory_expression(lineage_tree, trajectory, n_genes=N_GENES, random_seed=3)
-    b = trajectory_expression(lineage_tree, trajectory, n_genes=N_GENES, random_seed=3)
+    a = trajectory_expression(lineage_tree, trajectory, n_genes=N_GENES, random_seed=3, copy=True)
+    b = trajectory_expression(lineage_tree, trajectory, n_genes=N_GENES, random_seed=3, copy=True)
     np.testing.assert_array_equal(np.asarray(a.X), np.asarray(b.X))
 
 
@@ -104,6 +121,7 @@ def test_trajectory_counts(lineage_tree, trajectory, distribution):
         distribution=distribution,
         library_size=library_size,
         random_seed=0,
+        copy=True,
     )
     X = np.asarray(out.X)
     assert np.issubdtype(X.dtype, np.integer)

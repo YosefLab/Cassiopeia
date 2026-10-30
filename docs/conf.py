@@ -17,6 +17,7 @@
 # relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
 #
+import datetime
 import shutil
 import sys
 from pathlib import Path
@@ -46,6 +47,7 @@ shutil.copytree(
 )
 
 import cassiopeia  # noqa
+import cassiopeia.mixins  # noqa
 
 
 # -- General configuration ---------------------------------------------
@@ -85,7 +87,6 @@ myst_enable_extensions = [
 ]
 
 # nbsphinx specific settings
-exclude_patterns = ["_build", "**.ipynb_checkpoints"]
 nbsphinx_execute = "never"
 
 autodoc_mock_imports = ["gurobipy"]
@@ -118,10 +119,12 @@ master_doc = "index"
 
 
 intersphinx_mapping = {
-    "matplotlib": ("https://matplotlib.org/", None),
-    "numpy": ("https://docs.scipy.org/doc/numpy/", None),
-    "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
+    "anndata": ("https://anndata.readthedocs.io/en/stable/", None),
+    "matplotlib": ("https://matplotlib.org/stable/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "pandas": ("https://pandas.pydata.org/docs/", None),
     "python": ("https://docs.python.org/3", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
     "networkx": ("https://networkx.org/documentation/stable/", None),
     "treedata": ("https://treedata.readthedocs.io/en/latest/", None),
     "pycea": ("https://pycea.readthedocs.io/en/latest/", None),
@@ -130,7 +133,7 @@ intersphinx_mapping = {
 
 # General information about the project.
 project = "cassiopeia"
-copyright = "2022, Yosef Lab, UC Berkeley"
+copyright = f"2018-{datetime.date.today().year}, Yosef Lab"
 author = "Matthew G Jones, Richard Zhang, Sebastian Prillo, Joseph Min, Jeffrey J Quinn, Alex Khodaverdian"
 
 # The version info for the project you're documenting, acts as replacement
@@ -152,7 +155,17 @@ language = "en"
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", ".pyx"]
+# (``**/._*`` skips the AppleDouble files that macOS writes on network drives).
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "**.ipynb_checkpoints", "._*", "**/._*"]
+
+# Cassiopeia's exception and warning classes (``cassiopeia.mixins``) are not part of the
+# documented API; don't flag their names in "Raises" sections in nitpicky (-n) builds.
+nitpick_ignore = [
+    ("py:exc", name)
+    for module in (cassiopeia.mixins.errors, cassiopeia.mixins.warnings)
+    for name, obj in vars(module).items()
+    if isinstance(obj, type) and issubclass(obj, Exception)
+]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
@@ -209,16 +222,6 @@ nbsphinx_thumbnails = {
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = "cassiopeiadoc"
-
-mathjax_config = {
-    "extensions": ["tex2jax.js"],
-    "jax": ["input/TeX", "output/HTML-CSS"],
-    "tex2jax": {
-        "inlineMath": [["$", "$"], ["\\(", "\\)"]],
-        "displayMath": [["$$", "$$"], ["\\[", "\\]"]],
-        "processEscapes": True,
-    },
-}
 
 
 # Code for creating autosummaries for class methods / attributes

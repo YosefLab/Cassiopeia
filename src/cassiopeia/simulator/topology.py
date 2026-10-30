@@ -12,6 +12,7 @@ import pandas as pd
 import treedata as td
 
 from cassiopeia.mixins import TreeSimulatorError
+from cassiopeia.simulator.tracing import _is_int, _is_real
 from cassiopeia.utils import _collapse_unifurcations, _get_leaf_data, _get_node_data
 
 
@@ -33,6 +34,25 @@ def _name_generator(
             yield name
 
 
+def _accepts_rng(func: Callable) -> bool:
+    """Whether ``func`` takes an ``rng`` keyword argument."""
+    try:
+        params = inspect.signature(func).parameters
+    except (TypeError, ValueError):
+        return False
+    return "rng" in params or any(p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values())
+
+
+def _seed_global_rng(random_seed: int | None, *funcs: object) -> None:
+    """Seed NumPy's global RNG if one of *funcs* cannot take the simulation's ``rng``.
+
+    Such callables (2.x style, e.g. ``lambda scale: np.random.exponential(scale)``)
+    draw from ``np.random``; otherwise the global RNG is left untouched.
+    """
+    if random_seed is not None and any(callable(f) and not _accepts_rng(f) for f in funcs):
+        np.random.seed(random_seed)
+
+
 def _call(func: Callable, *args, rng: np.random.Generator):
     """Call ``func(*args)``, passing ``rng=`` when ``func`` accepts an ``rng`` parameter.
 
@@ -40,14 +60,7 @@ def _call(func: Callable, *args, rng: np.random.Generator):
     :class:`numpy.random.Generator` for reproducibility, while older
     zero/positional-argument callables keep working unchanged.
     """
-    try:
-        params = inspect.signature(func).parameters
-    except (TypeError, ValueError):
-        params = {}
-    accepts_rng = "rng" in params or any(
-        p.kind is inspect.Parameter.VAR_KEYWORD for p in params.values()
-    )
-    if accepts_rng:
+    if _accepts_rng(func):
         return func(*args, rng=rng)
     return func(*args)
 
@@ -99,7 +112,7 @@ def complete_binary(
 ) -> td.TreeData:
     """Simulate a complete binary tree.
 
-    Uses :func:`nx.balanced_tree` to generate a perfectly balanced binary tree.
+    Uses :func:`~networkx.generators.classic.balanced_tree` to generate a perfectly balanced binary tree.
     Exactly one of ``num_cells`` or ``depth`` must be provided. All branches
     have equal length normalized by tree height (height = 1).
 
@@ -116,17 +129,20 @@ def complete_binary(
 
     Raises:
         TreeSimulatorError: If neither or both of ``num_cells``/``depth`` are
-            given, if ``num_cells`` is not a power of 2, or if depth <= 0.
+            given, if ``num_cells`` is not a power of 2 greater than 1, or if
+            depth <= 0.
     """
     if (num_cells is None) == (depth is None):
         raise TreeSimulatorError("One of `num_cells` or `depth` must be provided.")
     if num_cells is not None:
-        log2_num_cells = np.log2(num_cells)
-        if log2_num_cells != int(log2_num_cells):
-            raise TreeSimulatorError("`num_cells` must be a power of 2.")
-        depth = int(log2_num_cells)
+        if num_cells < 2 or np.log2(num_cells) != int(np.log2(num_cells)):
+            raise TreeSimulatorError(
+                f"`num_cells` must be a power of 2 greater than 1, got {num_cells}."
+            )
+        depth = int(np.log2(num_cells))
     if depth <= 0:
         raise TreeSimulatorError("`depth` must be greater than 0.")
+    depth = int(depth)
 
     names = _name_generator(start=1)
     tree = nx.balanced_tree(2, depth, create_using=nx.DiGraph)
@@ -172,7 +188,10 @@ def birth_death_process(
 
     Distribution callables may optionally accept a trailing ``rng`` keyword
     argument (a :class:`numpy.random.Generator`); when they do, the simulation's
-    seeded generator is passed in for reproducibility.
+    seeded generator is passed in for reproducibility. If a callable does not
+    take ``rng``, ``random_seed`` also seeds NumPy's global random state, so
+    callables that draw from ``np.random`` (e.g.
+    ``lambda scale: np.random.exponential(scale)``) are reproducible too.
 
     Args:
         birth_waiting_distribution: Samples birth waiting times; takes a scale
@@ -183,18 +202,21 @@ def birth_death_process(
         mutation_distribution: Samples number of fitness mutations at division.
             If ``None``, no fitness mutations occur. Optionally takes ``rng``.
         fitness_distribution: Samples the exponent for each fitness mutation.
-            Required when ``mutation_distribution`` is provided. Optionally takes
-            ``rng``.
+            Required when ``mutation_distribution`` is provided and ignored
+            (with a warning) without it. Optionally takes ``rng``.
         fitness_base: Base raised by the fitness exponent to compute the
             multiplicative fitness coefficient. Default is ``e``.
         num_extant: Stop when this many lineages exist simultaneously.
         experiment_time: Stop when total elapsed time reaches this value.
         collapse_unifurcations: Whether to collapse unifurcations after pruning.
-        random_seed: Seed for the simulation's :class:`numpy.random.Generator`.
+        random_seed: Seed for the simulation's :class:`numpy.random.Generator`
+            (and for NumPy's global random state if a callable does not take
+            ``rng``).
         initial_tree: Optional ``nx.DiGraph`` from which to resume simulation.
             Leaf nodes of this tree become the starting lineages. Nodes should
             have ``"birth_scale"`` and ``"time"`` attributes (defaults to
-            ``initial_birth_scale`` and 0 if absent).
+            ``initial_birth_scale`` and 0 if absent). Node names are converted
+            to strings.
         on_division: Optional hook ``on_division(parent_data[, rng])`` returning a
             2-tuple of attribute dicts for the two daughters, given the dividing
             node's attributes (``tree.nodes[parent]``). The returned attributes
@@ -217,12 +239,23 @@ def birth_death_process(
         raise TreeSimulatorError("Please specify at least one stopping condition")
     if mutation_distribution is not None and fitness_distribution is None:
         raise TreeSimulatorError("Please specify a fitness strength distribution")
+    if fitness_distribution is not None and mutation_distribution is None:
+        warnings.warn(
+            "fitness_distribution is ignored without mutation_distribution, which samples "
+            "the number of fitness mutations per division.",
+            UserWarning,
+            stacklevel=2,
+        )
     if num_extant is not None and num_extant <= 0:
         raise TreeSimulatorError("Please specify number of extant lineages greater than 0")
-    if num_extant is not None and type(num_extant) is not int:
+    if num_extant is not None and not _is_int(num_extant):
         raise TreeSimulatorError("Please specify an integer number of extant tips")
+    if num_extant is not None:
+        num_extant = int(num_extant)
     if experiment_time is not None and experiment_time <= 0:
         raise TreeSimulatorError("Please specify an experiment time greater than 0")
+    if initial_tree is not None:
+        initial_tree = _with_str_names(initial_tree)
 
     if on_division is None:
 
@@ -242,6 +275,14 @@ def birth_death_process(
             )
 
     exclude = set(initial_tree.nodes) if initial_tree is not None else set()
+    _seed_global_rng(
+        random_seed,
+        birth_waiting_distribution,
+        death_waiting_distribution,
+        mutation_distribution,
+        fitness_distribution,
+        on_division,
+    )
     rng = np.random.default_rng(random_seed)
 
     _max_attempts = 10
@@ -312,6 +353,19 @@ def birth_death_process(
                     UserWarning,
                     stacklevel=2,
                 )
+
+
+def _with_str_names(tree: nx.DiGraph) -> nx.DiGraph:
+    """*tree* with node names converted to strings (TreeData and h5td use strings).
+
+    New nodes get string names, so integer names would sit next to equal-looking
+    strings (``0`` and ``"0"``), which collide when written to h5td.
+    """
+    if all(isinstance(node, str) for node in tree.nodes):
+        return tree
+    if len({str(node) for node in tree.nodes}) != tree.number_of_nodes():
+        raise TreeSimulatorError("initial_tree node names must be distinct as strings.")
+    return nx.relabel_nodes(tree, {node: str(node) for node in tree.nodes})
 
 
 def _initialize_bd_tree(
@@ -488,6 +542,7 @@ def simple_fit_subclone(
     branch_length_fit: float | Callable[[], float] = 0.5,
     experiment_duration: float = 10.0,
     generations_until_fit_subclone: int = 5,
+    random_seed: int | None = None,
     key_added: str = "simulated",
     alignment: Literal["nodes", "leaves"] = "leaves",
 ) -> td.TreeData:
@@ -503,13 +558,18 @@ def simple_fit_subclone(
 
     Args:
         branch_length_neutral: Branch length for neutrally evolving cells.
-            May be a scalar or a zero-argument callable for stochastic lengths.
+            May be a scalar or a callable for stochastic lengths, taking no
+            arguments or an ``rng`` keyword argument (a
+            :class:`numpy.random.Generator`).
         branch_length_fit: Branch length for the fit subclone. May be a scalar
-            or a zero-argument callable.
+            or a callable, like ``branch_length_neutral``.
         experiment_duration: Total experiment length; cells that have not yet
             divided by this time become leaves.
         generations_until_fit_subclone: Generation at which one lineage gains
             fitness.
+        random_seed: Seed for the generator passed to callable branch lengths
+            (and for NumPy's global random state if a callable does not take
+            ``rng``, e.g. ``lambda: np.random.exponential(1)``).
         key_added: Key under which the tree is stored in ``obst``.
         alignment: Whether the tree is aligned to "nodes" or "leaves" in the
             resulting TreeData.
@@ -518,14 +578,16 @@ def simple_fit_subclone(
         A TreeData with the simulated tree in ``obst[key_added]``. All nodes
         have a ``"time"`` attribute.
     """
-    if isinstance(branch_length_neutral, (int, float)):
-        _bl_neutral: Callable[[], float] = lambda: branch_length_neutral  # type: ignore[arg-type]
-    else:
-        _bl_neutral = branch_length_neutral
-    if isinstance(branch_length_fit, (int, float)):
-        _bl_fit: Callable[[], float] = lambda: branch_length_fit  # type: ignore[arg-type]
-    else:
-        _bl_fit = branch_length_fit
+    _seed_global_rng(random_seed, branch_length_neutral, branch_length_fit)
+    rng = np.random.default_rng(random_seed)
+
+    def _branch_length(value: float | Callable) -> Callable[[], float]:
+        if _is_real(value):
+            return lambda: value
+        return lambda: _call(value, rng=rng)
+
+    _bl_neutral = _branch_length(branch_length_neutral)
+    _bl_fit = _branch_length(branch_length_fit)
 
     tree: nx.DiGraph = nx.DiGraph()
     names = _name_generator(start=0)

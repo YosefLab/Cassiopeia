@@ -8,7 +8,7 @@ Cassiopeia-Hybrid algorithm stacks a greedy top on an ILP bottom.
 Sub-solvers may be passed as **strings** or **callables**:
 
 - ``top_solver`` is a *split function* with signature
-  ``(character_matrix, samples, weights, missing_state_indicator) -> (left, right)``,
+  ``(character_matrix, samples, weights, missing_state) -> (left, right)``,
   or the name of a registered split (e.g. ``"greedy"``).  Defaults to the vanilla
   greedy split.  Extra keyword arguments may be supplied via ``top_kwargs``.
 - ``bottom_solver`` is applied to each subproblem as ``bottom_solver(sub_tdata)``,
@@ -36,9 +36,11 @@ from cassiopeia.dissimilarity._pairwise import _encode_integer_matrix, _encode_p
 from cassiopeia.mixins import HybridSolverError, find_duplicate_groups
 from cassiopeia.tools.ancestral_characters import _get_lca_characters
 from cassiopeia.utils import (
+    _check_leaf_alignment,
     _format_priors,
     _get_characters,
     _get_parameter,
+    _name_internal_nodes,
     _node_name_generator,
     _resolve_priors,
     _set_tree,
@@ -168,7 +170,7 @@ def _apply_bottom_solver(
     # the bottom solver reads to avoid re-resolving (and warning about) defaults.
     uns = {"missing_state": missing_state_indicator, "unmodified_state": 0}
     if priors:
-        uns["priors"] = _format_priors(priors)
+        uns["priors"] = _format_priors(priors, subproblem_character_matrix.columns)
     sub_tdata = td.TreeData(
         obs=pd.DataFrame(index=list(subproblem_character_matrix.index)),
         obsm={"characters": subproblem_character_matrix},
@@ -249,29 +251,40 @@ def _resolve_bottom_solver(
             raise HybridSolverError(
                 f"Unknown bottom_solver {bottom_solver!r}. Available: {sorted(registry)}."
             )
+        if bottom_solver == "ilp":
+            from cassiopeia.solver.ilp import _import_gurobipy
+
+            _import_gurobipy()  # fail before the top-down split if Gurobi is missing
         bottom_solver = registry[bottom_solver]
     if bottom_kwargs:
         bottom_solver = functools.partial(bottom_solver, **bottom_kwargs)
     return bottom_solver
 
 
-def _maybe_bind_priors(bottom_solver: Callable, priors_value: dict | bool) -> Callable:
+def _maybe_bind_priors(
+    bottom_solver: Callable, priors_value: dict | bool, explicit: bool = True
+) -> Callable:
     """Bind *priors_value* to *bottom_solver* if it accepts a ``priors`` keyword.
 
-    The functional solvers (ilp/greedy/nj/upgma) take a ``priors`` argument that
-    otherwise defaults to ``True`` — which, on a prior-free subproblem, would
-    re-resolve and raise. Binding hybrid's resolved priors keeps the bottom
-    solver consistent with the top-level decision. Class-shim ``solve`` methods
-    don't expose ``priors`` (they read it from the subproblem TreeData), so they
-    are left untouched.
+    Binding hybrid's resolved priors keeps the bottom solver consistent with the
+    top-level decision. Priors picked up implicitly from ``tdata.uns``
+    (*explicit* ``False``) are not passed to a distance solver whose
+    ``dissim_fn`` ignores weights, which would warn about them. Class-shim
+    ``solve`` methods don't expose ``priors`` (they read it from the subproblem
+    TreeData), so they are left untouched.
     """
+    from cassiopeia.dissimilarity._metrics import _uses_weights
+
     try:
         params = inspect.signature(bottom_solver).parameters
     except (TypeError, ValueError):
         return bottom_solver
-    if "priors" in params:
-        return functools.partial(bottom_solver, priors=priors_value)
-    return bottom_solver
+    if "priors" not in params:
+        return bottom_solver
+    if not explicit and priors_value and "dissim_fn" in params:
+        if not _uses_weights(params["dissim_fn"].default):
+            priors_value = False
+    return functools.partial(bottom_solver, priors=priors_value)
 
 
 def _add_duplicates_to_tree_and_remove_spurious_leaves(
@@ -316,7 +329,7 @@ def hybrid(
     prior_transformation: str = "negative_log",
     missing_state: int | str | None = None,
     unmodified_state: int | str | None = None,
-    priors: dict[int, dict[int, float]] | bool | None = None,
+    priors: dict | list | bool | None = None,
     top_kwargs: dict | None = None,
     bottom_kwargs: dict | None = None,
     threads: int = 1,
@@ -332,7 +345,7 @@ def hybrid(
     Args:
         tdata: TreeData to operate on.
         top_solver: Split function
-            ``(character_matrix, samples, weights, missing_state_indicator) ->
+            ``(character_matrix, samples, weights, missing_state) ->
             (left, right)``, or the name of a registered split (``"greedy"``).
             Defaults to the vanilla greedy split.
         bottom_solver: Callable applied to each subproblem as
@@ -353,9 +366,9 @@ def hybrid(
         priors: Priors for character states. ``None`` (default) uses
             ``tdata.uns["priors"]`` if present and otherwise reconstructs without
             priors; ``True`` requires stored priors and raises if there are none;
-            ``False`` reconstructs without priors; a dict (character index ->
-            {state: probability}) is used directly. The resolved value is propagated to
-            the bottom solver.
+            ``False`` reconstructs without priors; a dict (character name or
+            index -> {state: probability}) is used directly. The resolved value
+            is propagated to the bottom solver.
         top_kwargs: Extra keyword arguments bound to *top_solver*.
         bottom_kwargs: Extra keyword arguments bound to *bottom_solver*
             (e.g. ``{"weighted": True}`` for the ILP bottom solver).
@@ -377,10 +390,12 @@ def hybrid(
     top_solver = _resolve_top_solver(top_solver, top_kwargs)
     bottom_solver = _resolve_bottom_solver(bottom_solver, bottom_kwargs)
 
+    _check_leaf_alignment(tdata)
     tdata = tdata.copy() if copy else tdata
-    character_matrix = _get_characters(tdata, characters_key).copy()
+    character_matrix = _get_characters(tdata, characters_key, missing_state).copy()
     missing_state_indicator = _get_parameter(tdata, "missing_state", value=missing_state)
     unmodified_state = _get_parameter(tdata, "unmodified_state", value=unmodified_state)
+    explicit_priors = priors is not None
     priors = _resolve_priors(tdata, priors, character_matrix)
     # Encode string/categorical states to integers so the greedy split logic and
     # the bottom solver operate on the integer convention; re-key priors to match.
@@ -392,7 +407,7 @@ def hybrid(
     # does not independently default to priors=True and raise on a prior-free
     # subproblem. The subproblem matrices are already integer-encoded, so the
     # bottom solver must receive the re-keyed (integer-state) priors.
-    bottom_solver = _maybe_bind_priors(bottom_solver, priors if priors else False)
+    bottom_solver = _maybe_bind_priors(bottom_solver, priors if priors else False, explicit_priors)
 
     weights = None
     if priors:
@@ -475,6 +490,7 @@ def hybrid(
         tree, character_matrix, node_name_generator
     )
 
+    samples_tree = _name_internal_nodes(samples_tree, character_matrix.index)
     _set_tree(tdata, samples_tree, key_added)
 
     return tdata if copy else None

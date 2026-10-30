@@ -169,6 +169,14 @@ def test_clonal_obsm_shape():
     tdata = _make_tdata(n_leaves=n_leaves)
     clonal_spatial(tdata, shape=(100, 100), random_seed=0)
     assert tdata.obsm["spatial"].shape == (n_leaves, 2)
+    # A unifurcation above a leaf, with observations for all nodes.
+    tree = tdata.obst["simulated"].copy()
+    tree.remove_edge("3", "7")
+    tree.add_edges_from([("3", "u"), ("u", "7")])
+    tree.nodes["u"]["time"] = 2.5
+    nodes = td.TreeData(obst={"simulated": tree}, alignment="nodes")
+    clonal_spatial(nodes, shape=(100, 100), random_seed=0)
+    assert nodes.obsm["spatial"].shape == (tree.number_of_nodes(), 2)
 
 
 def test_clonal_obsm_columns():
@@ -282,15 +290,21 @@ def test_clonal_key_added():
 
 def test_brownian_spatial_data_simulator_deprecated():
     with pytest.warns(DeprecationWarning, match="brownian_spatial"):
-        sim = BrownianSpatialDataSimulator()
-    with pytest.raises(NotImplementedError):
+        sim = BrownianSpatialDataSimulator(dim=2, diffusion_coefficient=1.0, random_seed=0)
+    tdata = _make_tdata()
+    sim.overlay_data(tdata)
+    assert tdata.obsm["spatial"].shape == (tdata.n_obs, 2)
+    with pytest.raises(TypeError, match="TreeData"):
         sim.overlay_data(None)
 
 
 def test_clonal_spatial_data_simulator_deprecated():
     with pytest.warns(DeprecationWarning, match="clonal_spatial"):
-        sim = ClonalSpatialDataSimulator()
-    with pytest.raises(NotImplementedError):
+        sim = ClonalSpatialDataSimulator(shape=(50, 50), random_seed=0)
+    tdata = _make_tdata()
+    sim.overlay_data(tdata)
+    assert tdata.obsm["spatial"].shape == (tdata.n_obs, 2)
+    with pytest.raises(TypeError, match="TreeData"):
         sim.overlay_data(None)
 
 
