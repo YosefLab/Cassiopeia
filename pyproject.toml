@@ -3,7 +3,7 @@ build-backend = "setuptools.build_meta"
 requires = [
   "cython>=3",
   "numpy>=2",
-  "setuptools>=64",
+  "setuptools>=77",
   "wheel",
 ]
 
@@ -32,26 +32,25 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
 ]
 dependencies = [
   "anndata>=0.11",
-  "biopython>=1.71",
-  "joblib",
-  "matplotlib>=2.2.2",
+  "matplotlib>=3.8.4",
   "networkx>=3.1",
-  "numba>=0.51",
+  "numba>=0.60",
   "numpy>=2",
-  "pandas>=2.2.1",
-  "pyarrow>=14",
+  "pandas>=2.2.2",
+  "pyarrow>=16",
   "pysam>=0.22",
-  "pyyaml>=3.12",
-  "scipy>=1.9",
+  "pyyaml>=6",
+  "scipy>=1.13",
   "tqdm>=4",
   "treedata>=0.2.2",
 ]
 
 optional-dependencies.convexml = [
-  "cvxpy>=1.4",
+  "cvxpy>=1.5.2",
 ]
 optional-dependencies.dev = [
   "cython>=3.0.6", # for regenerating .c from .pyx when releasing
@@ -62,10 +61,8 @@ optional-dependencies.doc = [
   "docutils>=0.8,!=0.18.*,!=0.19.*",
   "ipykernel",
   "ipython",
-  "myst-nb>=1.1",
+  "myst-parser",
   "nbsphinx",
-  "pandas",
-  "pandoc",
   "pycea-lineage>=0.4",              # imported as pycea; requires Python >= 3.11
   "scanpydoc",
   "setuptools",
@@ -83,10 +80,11 @@ optional-dependencies.spatial = [
   "squidpy>=1.6",
 ]
 optional-dependencies.test = [
+  "biopython>=1.80",
   "coverage>=7.10",
-  "cvxpy>=1.4",
-  "pytest",
-  "pytest-cov",
+  "cvxpy>=1.5.2",
+  "pytest>=8",
+  "pytest-cov>=5",
 ]
 # URLs
 urls.Documentation = "https://cassiopeia-lineage.readthedocs.io/"
@@ -165,6 +163,10 @@ lint.per-file-ignores."*/__init__.py" = [ "F401" ]
 lint.per-file-ignores."docs/*" = [ "I" ]
 lint.per-file-ignores."tests/*" = [ "D" ]
 lint.pydocstyle.convention = "google"
+
+[tool.pyproject-fmt]
+# Keep the 3.14 classifier (pyproject-fmt generates the version classifiers).
+max_supported_python = "3.14"
 
 [tool.pytest.ini_options]
 testpaths = [ "tests" ]

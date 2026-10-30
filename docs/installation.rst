@@ -40,7 +40,8 @@ Some features need additional packages:
 Development version
 -------------------
 
-To install the latest development version from GitHub:
+To install the latest development version from GitHub (building from source compiles C++
+extensions and needs a C++20 compiler and zlib):
 
 .. code-block:: bash
 
