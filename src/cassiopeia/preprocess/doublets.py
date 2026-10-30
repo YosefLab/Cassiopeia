@@ -64,10 +64,10 @@ def doublet_scores(
           than ``min_informative`` integrations are observed. Minor alleles
           removed by :func:`cassiopeia.pp.filter_alleles`
           (``min_allele_frac``, ``allow_allele_conflicts``) are included.
-          Before :func:`cassiopeia.pp.filter_integrations` (the recommended
-          order), intBCs that conflict in more than ``max_intbc_conflict`` of
-          their clone's cells, such as duplicated integrations, are not
-          informative; afterwards only its kept integrations are.
+          After :func:`cassiopeia.pp.filter_integrations`, only its kept
+          integrations are informative; before it, intBCs that conflict in
+          more than ``max_intbc_conflict`` of their clone's cells, such as
+          duplicated integrations, are not.
         * ``clone_mixture``: fraction of the cell's UMIs on intBCs that belong
           to another clone's signature but not its own (1 for NovaClone
           multiplets). Only with more than one clone.
@@ -193,12 +193,12 @@ def filter_doublets(
     clone mixtures when there is more than one clone, so the same call works
     for data with many clones and for data where all cells share intBCs.
 
-    Run before :func:`cassiopeia.pp.filter_integrations`, which leaves the
-    flagged cells out of its conflict rates, so that doublets do not make
-    integrations look unreliable. intBCs that conflict in more than
-    ``max_intbc_conflict`` of their clone's cells, such as duplicated
-    integrations, are then not used for ``allele_conflict``, so they do not
-    flag the whole clone.
+    Can run before or after :func:`cassiopeia.pp.filter_integrations`. After
+    it, only the kept integrations are used for ``allele_conflict``. Before
+    it, intBCs that conflict in more than ``max_intbc_conflict`` of their
+    clone's cells, such as duplicated integrations, are not used, so they do
+    not flag the whole clone; :func:`cassiopeia.pp.filter_integrations` then
+    leaves the flagged cells out of its conflict rates.
 
     Args:
         df: Allele table.

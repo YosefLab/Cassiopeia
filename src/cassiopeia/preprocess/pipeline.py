@@ -34,9 +34,9 @@ STEPS = [
     "filter_alleles",
     "filter_cells",
     "call_clones",
-    "filter_doublets",
     "filter_integrations",
     "filter_cells_coverage",
+    "filter_doublets",
 ]
 
 #: The function run by each step.
@@ -47,9 +47,9 @@ _STEP_FUNCTIONS: dict[str, Callable] = {
     "filter_alleles": filter_alleles,
     "filter_cells": filter_cells,
     "call_clones": call_clones,
-    "filter_doublets": filter_doublets,
     "filter_integrations": filter_integrations,
     "filter_cells_coverage": filter_cells,
+    "filter_doublets": filter_doublets,
 }
 
 DEFAULTS: dict[str, Any] = {
@@ -58,9 +58,9 @@ DEFAULTS: dict[str, Any] = {
     "filter_cells": {"min_umi": 10},
     # only for data with several clones
     "call_clones": False,
-    "filter_doublets": {},
     "filter_integrations": {},
     "filter_cells_coverage": {"min_intbc_frac": 0.5},
+    "filter_doublets": {},
 }
 
 EXAMPLE_CONFIG = """\
@@ -85,9 +85,9 @@ correct_intbcs: {}
 filter_alleles: {min_allele_frac: 0.5, min_umi_per_allele: 2}   # adjust to sequencing depth
 filter_cells: {min_umi: 10}
 call_clones: false                   # {method: nova_clone} for data with several clones
-filter_doublets: {}                  # before filter_integrations, so doublets do not inflate conflicts
 filter_integrations: {min_detection: 0.2, max_conflict: 0.2}
 filter_cells_coverage: {min_intbc_frac: 0.5}   # optional
+filter_doublets: {}
 # The result is <dir>/<name>.alleles.parquet. Convert it to characters in Python:
 #   df = cas.pp.read_alleles("results/sample1/sample1.alleles.parquet")
 #   tdata = cas.pp.alleles_to_characters(df)
@@ -217,13 +217,11 @@ def run(config: str | Path | dict) -> pd.DataFrame:
     5. :func:`~cassiopeia.pp.filter_cells`, with ``min_umi=10`` by default.
     6. :func:`~cassiopeia.pp.call_clones`, skipped unless it is in the config
        (only for data with several clones).
-    7. :func:`~cassiopeia.pp.filter_doublets`, before
-       ``filter_integrations`` so that doublets do not inflate its conflict
-       rates.
-    8. :func:`~cassiopeia.pp.filter_integrations`
-    9. ``filter_cells_coverage``: :func:`~cassiopeia.pp.filter_cells` again,
+    7. :func:`~cassiopeia.pp.filter_integrations`
+    8. ``filter_cells_coverage``: :func:`~cassiopeia.pp.filter_cells` again,
        with ``min_intbc_frac=0.5`` by default. Runs only after
        ``filter_integrations`` or ``call_clones``.
+    9. :func:`~cassiopeia.pp.filter_doublets`
 
     Filters annotate the table (``pass_*`` columns) rather than drop rows, so
     the saved table keeps every allele and can be filtered again.

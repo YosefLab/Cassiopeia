@@ -21,9 +21,9 @@ def _process(sim, clones=False, collapse=False, correct=True, **kw):
     df = cas.pp.filter_cells(df, min_umi=5)
     if clones:
         df = cas.pp.call_clones(df, **kw)
-    df = cas.pp.filter_doublets(df)
     df = cas.pp.filter_integrations(df, min_detection=0.4)
-    return cas.pp.filter_cells(df, min_intbc_frac=0.5)
+    df = cas.pp.filter_cells(df, min_intbc_frac=0.5)
+    return cas.pp.filter_doublets(df)
 
 
 def _truth_cells(sim, df):
@@ -212,8 +212,11 @@ def test_user_clones(sim_factory):
     df = cas.pp.filter_alleles(df, min_umi_per_allele=1)
     df = cas.pp.filter_cells(df, min_umi=5)
     df = cas.pp.call_clones(df, clones=clones)
-    df = cas.pp.filter_doublets(df)
-    df = cas.pp.filter_integrations(df)
+    # filter_doublets and filter_integrations can run in either order
+    other = cas.pp.filter_doublets(cas.pp.filter_integrations(df))
+    df = cas.pp.filter_integrations(cas.pp.filter_doublets(df))
+    for col in ("pass_doublet", "pass_integration"):
+        assert (df[col] == other[col]).all()
     # cells flagged as doublets are left out of the integration metrics
     assert (~df["pass_doublet"]).any()
     with_doublets = cas.pp.integration_metrics(df.assign(pass_doublet=True))

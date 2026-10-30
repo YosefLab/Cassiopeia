@@ -25,14 +25,15 @@ sharing the same edit calls depending on the value of ``collapse_umis``.
 
 Quality control and filtering of the **allele table** are performed using the
 functions below. Each function flags low quality data using a ``pass_*`` column
-rather than filtering, and most draw QC plots to help select thresholds. Run
-them in this order (as :func:`~cassiopeia.pp.run` does):
+rather than filtering, and most draw QC plots to help select thresholds.
+:func:`~cassiopeia.pp.run` runs them in this order:
 :func:`~cassiopeia.pp.correct_intbcs`, :func:`~cassiopeia.pp.filter_alleles`,
 :func:`~cassiopeia.pp.filter_cells`, :func:`~cassiopeia.pp.call_clones` (only
-for data with several clones), :func:`~cassiopeia.pp.filter_doublets`,
-:func:`~cassiopeia.pp.filter_integrations` and, optionally,
-:func:`~cassiopeia.pp.filter_cells` with ``min_intbc_frac``. Doublets are
-flagged before integrations are filtered so that they do not inflate the
+for data with several clones), :func:`~cassiopeia.pp.filter_integrations`,
+optionally :func:`~cassiopeia.pp.filter_cells` with ``min_intbc_frac``, and
+:func:`~cassiopeia.pp.filter_doublets`. :func:`~cassiopeia.pp.filter_doublets`
+and :func:`~cassiopeia.pp.filter_integrations` can run in either order;
+running :func:`~cassiopeia.pp.filter_doublets` first keeps doublets out of the
 integrations' conflict rates.
 
 Finally the **character matrix** is constructed from the filtered allele
@@ -93,9 +94,9 @@ Filtering, clones and doublets
    pp.filter_alleles
    pp.filter_cells
    pp.call_clones
+   pp.filter_integrations
    pp.filter_doublets
    pp.doublet_scores
-   pp.filter_integrations
 
 QC metrics and plots
 ~~~~~~~~~~~~~~~~~~~~

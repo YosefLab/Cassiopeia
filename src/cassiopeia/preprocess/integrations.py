@@ -128,10 +128,9 @@ def filter_integrations(
     two incompatible alleles. Integrations are kept if
     ``detection >= min_detection`` and ``conflict <= max_conflict``, which
     removes silenced or poorly captured integrations, and duplicated
-    integrations sharing an intBC.
-
-    Run :func:`cassiopeia.pp.filter_doublets` first: doublets inflate the
-    ``conflict`` rate, and cells it flags are left out of the rates.
+    integrations sharing an intBC. The ``conflict`` rate can be inflated by
+    doublets; cells flagged by :func:`cassiopeia.pp.filter_doublets` are left
+    out of the rates, so it can run before or after this function.
 
     Without a ``clone`` column (no :func:`cassiopeia.pp.call_clones`), all
     cells form one clone, labelled ``"0"``, and this is the population intBC
