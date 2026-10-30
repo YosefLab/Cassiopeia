@@ -14,7 +14,7 @@ Import Cassiopeia as::
    data
    critique
    solver
+   dissimilarity
    simulator
    spatial
-   plotting
    tools

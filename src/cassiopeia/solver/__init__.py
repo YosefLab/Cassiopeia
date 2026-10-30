@@ -1,0 +1,54 @@
+"""Top level for Tree Solver development."""
+
+from . import nj_solver_utilities, rooting
+from .deprecated import (
+    MaxCutGreedySolver,
+    MaxCutSolver,
+    PercolationSolver,
+    SharedMutationJoiningSolver,
+    SpectralGreedySolver,
+    SpectralNeighborJoiningSolver,
+    SpectralSolver,
+)
+from .greedy import VanillaGreedySolver, greedy
+from .hybrid import HybridSolver, hybrid
+from .ilp import ILPSolver, ilp
+from .neighbor_joining import NeighborJoiningSolver, nj
+from .rooting import reroot
+from .upgma import UPGMASolver, upgma
+
+__all__ = [
+    # functional API
+    "nj",
+    "upgma",
+    "greedy",
+    "ilp",
+    "hybrid",
+    "reroot",
+    # modules
+    "rooting",
+    # backward-compat class shims (deprecated)
+    "NeighborJoiningSolver",
+    "UPGMASolver",
+    "VanillaGreedySolver",
+    "ILPSolver",
+    "HybridSolver",
+    # deprecated, removed-implementation solvers
+    "MaxCutSolver",
+    "MaxCutGreedySolver",
+    "SpectralSolver",
+    "SpectralGreedySolver",
+    "SharedMutationJoiningSolver",
+    "PercolationSolver",
+    "SpectralNeighborJoiningSolver",
+]
+
+
+def __getattr__(name: str):
+    # 2.x alias ``cas.solver.dissimilarity``; imported lazily because the module
+    # warns that it is deprecated.
+    if name == "dissimilarity":
+        from . import dissimilarity_functions
+
+        return dissimilarity_functions
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

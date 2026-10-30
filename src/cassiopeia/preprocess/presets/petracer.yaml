@@ -1,0 +1,32 @@
+# PEtracer lineage tracing cassette (LTC): 30nt sequencing intBC and three
+# prime editing sites, each recording one of eight 5nt lineage marks (LMs).
+# Koblan, Yost et al. 2025 Science. The 183nt imaging barcode (68-251) is
+# masked; reads from the 10x 3' target-site library start downstream of it.
+name: petracer
+description: >-
+  PEtracer LTC with a 30nt intBC and three edit sites (RNF2, HEK3, EMX1), each
+  recording one of eight 5nt insertions (labelled 1-8).
+reference:
+  fasta: petracer_ltc.fa
+intbc: [272, 302]
+# Cell Ranger references with one contig per known intBC (e.g. intID1..2171)
+contig_pattern: '^intID\d+$'
+sites:
+  - name: RNF2
+    position: 332
+    edit_model: insertion_lookup
+    window: [2, 2]
+    lookup: {ACAGT: "1", ACTTA: "2", TTCCT: "3", TATAT: "4", GTTCA: "5", TGCCA: "6", TCCAA: "7", ACTCC: "8"}
+  - name: HEK3
+    position: 380
+    edit_model: insertion_lookup
+    window: [2, 2]
+    lookup: {GATAG: "1", AATCG: "2", GCAAG: "3", GCGCC: "4", CTTTG: "5", ATCAA: "6", CTCTC: "7", ATTTA: "8"}
+  # The published reference is 6bp short at EMX1: unedited cassettes carry
+  # CTTGGG at 448 (read as an insertion) and lineage marks replace it.
+  - name: EMX1
+    position: 448
+    edit_model: insertion_lookup
+    window: [2, 2]
+    lookup: {GGACA: "1", ACAAT: "2", CCCTA: "3", AGTAC: "4", CCGAT: "5", CCTTT: "6", ATCAA: "7", ATTCG: "8",
+             CTTGGG: "None"}

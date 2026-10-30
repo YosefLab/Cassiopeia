@@ -1,98 +1,61 @@
-.. Cassiopeia documentation master file, created by
-   sphinx-quickstart on Sat Jan 26 12:35:18 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+==========
+Cassiopeia
+==========
 
-========================
-Welcome!
-========================
+Cassiopeia [Jones20]_ is a package for processing and analyzing lineage tracing data.
+It provides an end-to-end pipeline for converting raw sequencing reads into character matrices and
+reconstructing lineage trees, along with tools for simulating lineage tracing data and benchmarking
+reconstruction methods. Cassiopeia is maintained by the
+`Yosef Lab <https://yoseflab.github.io/>`_ at the Weizmann Institute.
 
-This website serves as documentation to the Cassiopeia software suite, maintained by the `Yosef Lab
-<https://yoseflab.github.io/>`_ at the Weizmann Institute.
+Cassiopeia is part of the lineageverse ecosystem:
 
-Cassiopeia [Jones20]_ is a package for end-to-end phylogenetic reconstruction of single-cell lineage tracing data. The package is composed of the following modules:
+* `TreeData <https://treedata.readthedocs.io/en/latest/>`_, a data structure for storing lineage trees
+  alongside cell-level data. Cassiopeia functions read and write TreeData objects.
+* `Pycea <https://pycea.readthedocs.io/en/latest/>`_, a toolkit for visualizing and analyzing
+  lineage trees stored in TreeData objects.
 
-* ``preprocess`` for processing sequencing FASTQ data to character matrices.
-* ``solver`` for performing tree inference.
-* ``simulator`` for simulating trees and character-level data.
-* ``plotting`` for plotting trees.
-* ``spatial`` for performing analyses with spatial data.
-* ``tools`` for analyzing phylogenies, for example with paired RNA-seq data.
+Cassiopeia (``import cassiopeia as cas``) is organized into the following modules:
 
-If you find this useful for your research, please consider citing Cassiopeia [Jones20]_.
+* :doc:`cas.pp <api/preprocess>`: process sequencing reads into allele tables and character matrices.
+* :doc:`cas.solver <api/solver>`: reconstruct trees with neighbor joining, UPGMA, greedy, ILP or hybrid
+  solvers.
+* :doc:`cas.dissimilarity <api/dissimilarity>`: dissimilarities between cells for the distance-based
+  solvers.
+* :doc:`cas.tl <api/tools>`: infer ancestral states and branch lengths, edit tree topologies and estimate
+  lineage tracing parameters.
+* :doc:`cas.sim <api/simulator>`: simulate trees, lineage tracing data, gene expression and spatial
+  positions.
+* :doc:`cas.sp <api/spatial>`: analyze spatial lineage tracing data.
+* :doc:`cas.critique <api/critique>`: compare reconstructed trees with a ground truth.
 
-.. raw:: html
+If you find Cassiopeia useful for your research, please consider citing [Jones20]_.
 
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
-                <div class="card text-center intro-card shadow">
-                <img src="_static/computer-24px.svg" class="card-img-top" alt="installation with cassiopeia action icon" height="52">
-                <div class="card-body flex-fill">
-                    <h5 class="card-title">Installation</h5>
-                    <p class="card-text">New to <em>Cassiopeia</em>? Check out the installation guide.
-                    </p>
+.. grid:: 1 2 2 2
+   :gutter: 3
 
-.. container:: custom-button
+   .. grid-item-card:: :octicon:`download;1.5em;sd-mr-1` Installation
+      :link: installation
+      :link-type: doc
 
-    :doc:`To the installation guide<installation>`
+      New to Cassiopeia? Check out the installation guide.
 
-.. raw:: html
+   .. grid-item-card:: :octicon:`play;1.5em;sd-mr-1` Tutorials
+      :link: user_guide
+      :link-type: doc
 
-                </div>
-                </div>
-            </div>
-            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
-                <div class="card text-center intro-card shadow">
-                <img src="_static/play_circle_outline-24px.svg" class="card-img-top" alt="cassiopeia user guide action icon" height="52">
-                <div class="card-body flex-fill">
-                    <h5 class="card-title">User guide</h5>
-                    <p class="card-text">The tutorials provide in-depth information on running Cassiopeia.</p>
+      Learn to preprocess reads, reconstruct trees, simulate data and benchmark solvers.
 
-.. container:: custom-button
+   .. grid-item-card:: :octicon:`book;1.5em;sd-mr-1` API reference
+      :link: api/index
+      :link-type: doc
 
-    :doc:`To the user guide<user_guide>`
+      A detailed description of every function in Cassiopeia.
 
-.. raw:: html
+   .. grid-item-card:: :octicon:`mark-github;1.5em;sd-mr-1` Questions & issues
+      :link: https://github.com/YosefLab/Cassiopeia/issues
 
-                </div>
-                </div>
-            </div>
-            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
-                <div class="card text-center intro-card shadow">
-                <img src="_static/library_books-24px.svg" class="card-img-top" alt="api of scvi action icon" height="52">
-                <div class="card-body flex-fill">
-                    <h5 class="card-title">API reference</h5>
-                    <p class="card-text">The API reference contains a detailed description of
-                    the Cassiopeia API.</p>
-
-.. container:: custom-button
-
-    :doc:`To the API reference<api/index>`
-
-.. raw:: html
-
-                </div>
-                </div>
-            </div>
-            <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex">
-                <div class="card text-center intro-card shadow">
-                <img src="_static/question-mark-svgrepo-com.svg" class="card-img-top" alt="questions about cassiopeia" height="52">
-                <div class="card-body flex-fill">
-                    <h5 class="card-title">Questions & Issues</h5>
-                    <p class="card-text">Have a question or found a bug? File an issue.</p>
-
-.. container:: custom-button
-
-    `File an issue <https://github.com/YosefLab/Cassiopeia/issues>`_
-
-.. raw:: html
-
-                </div>
-                </div>
-            </div>
-        </div>
-    </div>
+      Have a question or found a bug? File an issue on GitHub.
 
 
 .. toctree::
@@ -103,5 +66,5 @@ If you find this useful for your research, please consider citing Cassiopeia [Jo
    api/index
    user_guide
    contributing
-   authors
+   changelog
    references

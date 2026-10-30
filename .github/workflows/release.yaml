@@ -1,0 +1,83 @@
+name: Release
+
+# Builds the sdist and binary wheels (Cython/C++ extensions) with cibuildwheel and publishes them to
+# PyPI when a GitHub release is published. It does not run on pull requests (macOS runners are
+# scarce; "Check Build" and "Test" cover Linux): run it manually from the Actions tab (Run workflow)
+# to test the wheels on every platform before publishing a release.
+# Platforms and Python versions are configured in [tool.cibuildwheel] in pyproject.toml.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'release' }}
+
+defaults:
+  run:
+    shell: bash -euo pipefail {0}
+
+jobs:
+  sdist:
+    name: Build source distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          filter: blob:none
+          fetch-depth: 0
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.3.3
+      - name: Build sdist
+        run: uv build --sdist
+      - name: Check sdist
+        run: uvx twine check --strict dist/*
+      - uses: actions/upload-artifact@v7
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+
+  wheels:
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Linux x86_64, Linux aarch64 and macOS arm64 (numba has no Intel macOS wheels and pysam
+        # no Windows wheels, so Cassiopeia cannot be installed on those platforms).
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          filter: blob:none
+          fetch-depth: 0
+      - name: Build and test wheels
+        uses: pypa/cibuildwheel@v4.3.5
+      - name: Check wheels
+        run: pipx run twine check --strict wheelhouse/*.whl
+      - uses: actions/upload-artifact@v7
+        with:
+          name: wheels-${{ matrix.os }}
+          path: wheelhouse/*.whl
+
+  publish:
+    name: Upload release to PyPI
+    needs: [sdist, wheels]
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/cassiopeia-lineage
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+      - name: List distributions
+        run: ls -l dist
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

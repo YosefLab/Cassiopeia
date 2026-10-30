@@ -1,5 +1,4 @@
 ##!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #
 # cassiopeia documentation build configuration file, created by
 # sphinx-quickstart on Fri Jun  9 13:47:02 2017.
@@ -18,13 +17,37 @@
 # relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
 #
+import datetime
+import shutil
 import sys
 from pathlib import Path
+
+from sphinx.ext.autosummary import Autosummary
+
+try:
+    from sphinx.ext.autosummary import _get_documenter as get_documenter
+except ImportError:
+    from sphinx.ext.autosummary import get_documenter
+from docutils.parsers.rst import directives
+from sphinx.util.inspect import safe_getattr
 
 HERE = Path(__file__).parent
 sys.path[:0] = [str(HERE.parent), str(HERE / "extensions")]
 
+# Copy the tutorials from ../notebooks. A symlink does not work: Sphinx resolves it, which
+# breaks the relative paths that nbsphinx writes for the figures of each notebook.
+_notebooks = HERE / "notebooks"
+if _notebooks.is_symlink():
+    _notebooks.unlink()
+shutil.rmtree(_notebooks, ignore_errors=True)
+shutil.copytree(
+    HERE.parent / "notebooks",
+    _notebooks,
+    ignore=shutil.ignore_patterns("._*", ".ipynb_checkpoints"),
+)
+
 import cassiopeia  # noqa
+import cassiopeia.mixins  # noqa
 
 
 # -- General configuration ---------------------------------------------
@@ -40,7 +63,6 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.viewcode",
     "nbsphinx",
-    "nbsphinx_link",
     "sphinx.ext.mathjax",
     "sphinx.ext.napoleon",
     "sphinx_autodoc_typehints",  # needs to be after napoleon
@@ -50,10 +72,21 @@ extensions = [
     # "scanpydoc.autosummary_generate_imported",
     *[p.stem for p in (HERE / "extensions").glob("*.py")],
     "sphinx_gallery.load_style",
+    "myst_parser",
+    "sphinx_tabs.tabs",
+    "sphinx_design",
+]
+
+myst_enable_extensions = [
+    "amsmath",
+    "colon_fence",
+    "deflist",
+    "dollarmath",
+    "html_image",
+    "html_admonition",
 ]
 
 # nbsphinx specific settings
-exclude_patterns = ["_build", "**.ipynb_checkpoints"]
 nbsphinx_execute = "never"
 
 autodoc_mock_imports = ["gurobipy"]
@@ -66,7 +99,7 @@ templates_path = ["_templates"]
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = ".rst"
+source_suffix = {".rst": "restructuredtext", ".md": "markdown"}
 
 # Generate the API documentation when building
 autosummary_generate = True
@@ -85,16 +118,22 @@ annotate_defaults = True  # scanpydoc option, look into why we need this
 master_doc = "index"
 
 
-intersphinx_mapping = dict(
-    matplotlib=("https://matplotlib.org/", None),
-    numpy=("https://docs.scipy.org/doc/numpy/", None),
-    pandas=("https://pandas.pydata.org/pandas-docs/stable/", None),
-    python=("https://docs.python.org/3", None),
-)
+intersphinx_mapping = {
+    "anndata": ("https://anndata.readthedocs.io/en/stable/", None),
+    "matplotlib": ("https://matplotlib.org/stable/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "pandas": ("https://pandas.pydata.org/docs/", None),
+    "python": ("https://docs.python.org/3", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
+    "networkx": ("https://networkx.org/documentation/stable/", None),
+    "treedata": ("https://treedata.readthedocs.io/en/latest/", None),
+    "pycea": ("https://pycea.readthedocs.io/en/latest/", None),
+    "scanpy": ("https://scanpy.readthedocs.io/en/stable/", None),
+}
 
 # General information about the project.
 project = "cassiopeia"
-copyright = "2022, Yosef Lab, UC Berkeley"
+copyright = f"2018-{datetime.date.today().year}, Yosef Lab"
 author = "Matthew G Jones, Richard Zhang, Sebastian Prillo, Joseph Min, Jeffrey J Quinn, Alex Khodaverdian"
 
 # The version info for the project you're documenting, acts as replacement
@@ -111,12 +150,22 @@ release = cassiopeia.__version__
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", ".pyx"]
+# (``**/._*`` skips the AppleDouble files that macOS writes on network drives).
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "**.ipynb_checkpoints", "._*", "**/._*"]
+
+# Cassiopeia's exception and warning classes (``cassiopeia.mixins``) are not part of the
+# documented API; don't flag their names in "Raises" sections in nitpicky (-n) builds.
+nitpick_ignore = [
+    ("py:exc", name)
+    for module in (cassiopeia.mixins.errors, cassiopeia.mixins.warnings)
+    for name, obj in vars(module).items()
+    if isinstance(obj, type) and issubclass(obj, Exception)
+]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
@@ -142,17 +191,18 @@ html_theme = "pydata_sphinx_theme"
 html_logo = "_static/logo.png"
 
 html_theme_options = {
+    "logo": {"image_light": "_static/logo.png", "image_dark": "_static/logo_dark.png"},
     "github_url": "https://github.com/YosefLab/Cassiopeia",
     "twitter_url": "https://twitter.com/YosefLab",
     # "use_edit_page_button": True,
 }
-html_context = dict(
-    display_github=True,  # Integrate GitHub
-    github_user="YosefLab",  # Username
-    github_repo="Cassiopeia",  # Repo name
-    github_version="master",  # Version
-    doc_path="docs/",  # Path in the checkout to the docs root
-)
+html_context = {
+    "display_github": True,  # Integrate GitHub
+    "github_user": "YosefLab",  # Username
+    "github_repo": "Cassiopeia",  # Repo name
+    "github_version": "master",  # Version
+    "doc_path": "docs/",  # Path in the checkout to the docs root
+}
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
@@ -160,12 +210,11 @@ html_static_path = ["_static"]
 html_css_files = ["css/override.css", "css/sphinx_gallery.css"]
 html_show_sphinx = False
 
+# Notebooks not listed here use the figure of the cell tagged "nbsphinx-thumbnail".
 nbsphinx_thumbnails = {
     "notebooks/preprocess": "_static/tutorials/preprocess.png",
     "notebooks/benchmark": "_static/tutorials/benchmark.png",
     "notebooks/reconstruct": "_static/tutorials/reconstruct.png",
-    "notebooks/local_plotting": "_static/tutorials/local_plotting.png",
-    "notebooks/simulate_ecDNA": "_static/tutorials/local_plotting.png"
 }
 
 
@@ -174,26 +223,11 @@ nbsphinx_thumbnails = {
 # Output file base name for HTML help builder.
 htmlhelp_basename = "cassiopeiadoc"
 
-mathjax_config = {
-    "extensions": ["tex2jax.js"],
-    "jax": ["input/TeX", "output/HTML-CSS"],
-    "tex2jax": {
-        "inlineMath": [["$", "$"], ["\\(", "\\)"]],
-        "displayMath": [["$$", "$$"], ["\\[", "\\]"]],
-        "processEscapes": True,
-    },
-}
-
-
-from sphinx.ext.autosummary import Autosummary
-from sphinx.ext.autosummary import get_documenter
-from docutils.parsers.rst import directives
-from sphinx.util.inspect import safe_getattr
-import re
 
 # Code for creating autosummaries for class methods / attributes
 # Taken originally from Pandas documentation
 class AutoAutoSummary(Autosummary):
+    """Autosummary directive that can document both methods and attributes."""
 
     option_spec = {
         "methods": directives.unchanged,
@@ -207,6 +241,7 @@ class AutoAutoSummary(Autosummary):
 
     @staticmethod
     def get_members(obj, typ, include_public=None):
+        """Return public members of ``obj`` matching ``typ``."""
         if not include_public:
             include_public = []
         items = []
@@ -221,6 +256,7 @@ class AutoAutoSummary(Autosummary):
         return public, items
 
     def run(self):
+        """Populate the autosummary directive with methods and attributes."""
         clazz = str(self.arguments[0])
         try:
             (module_name, class_name) = clazz.rsplit(".", 1)
@@ -230,20 +266,18 @@ class AutoAutoSummary(Autosummary):
                 _, methods = self.get_members(c, "method", ["__init__"])
 
                 self.content = [
-                    "~%s.%s" % (clazz, method)
-                    for method in methods
-                    if not method.startswith("_")
+                    f"~{clazz}.{method}" for method in methods if not method.startswith("_")
                 ]
             if "attributes" in self.options:
                 _, attribs = self.get_members(c, "attribute")
                 self.content = [
-                    "~%s.%s" % (clazz, attrib)
-                    for attrib in attribs
-                    if not attrib.startswith("_")
+                    f"~{clazz}.{attrib}" for attrib in attribs if not attrib.startswith("_")
                 ]
-        finally:
-            return super(AutoAutoSummary, self).run()
+        except (ImportError, AttributeError, ValueError):
+            return super().run()
+        return super().run()
 
 
 def setup(app):
+    """Register custom Sphinx directives used in the documentation build."""
     app.add_directive("autoautosummary", AutoAutoSummary)

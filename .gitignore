@@ -70,6 +70,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+docs/notebooks/
 
 # PyBuilder
 .pybuilder/
@@ -163,8 +164,13 @@ build
 *.c
 stdout.log
 notebooks/.ipynb_checkpoints
-cassiopeia/tools/branch_length_estimator/_iid_exponential_bayesian.cpp
+src/cassiopeia/tools/branch_length_estimator/_iid_exponential_bayesian.cpp
+src/cassiopeia/preprocess/_native/_core.cpp
 docs/api/reference/**
 .vscode
-cassiopeia/config.ini
+src/cassiopeia/config.ini
 environment.yml
+.nfs*
+._*
+dev/
+CLAUDE.md

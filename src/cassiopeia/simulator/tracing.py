@@ -1,0 +1,1086 @@
+"""Functional lineage tracing data simulators for Cassiopeia."""
+
+import math
+import numbers
+import warnings
+from collections.abc import Callable, Iterable
+from colorsys import hsv_to_rgb
+from typing import Any, Literal, overload
+
+import networkx as nx
+import numpy as np
+import pandas as pd
+import treedata as td
+
+from cassiopeia.mixins import DataSimulatorError
+from cassiopeia.utils import (
+    _format_priors,
+    _get_characters,
+    _get_digraph,
+    _get_parameter,
+    _normalize_missing,
+    _resolve_priors,
+)
+
+
+@overload
+def stochastic_tracing(
+    tdata: td.TreeData,
+    number_of_cassettes: int = 10,
+    size_of_cassette: int = 3,
+    mutation_rate: float | list[float] = 0.1,
+    state_generating_distribution: Callable[[], float] = ...,
+    number_of_states: int = 100,
+    state_priors: dict | list[dict] | None = None,
+    initiation_rate: float | None = None,
+    continuation_rate: float | None = None,
+    unmodified_state: str = "*",
+    random_seed: int | None = None,
+    tree_key: str | None = None,
+    time_key: str = "time",
+    key_added: str = "characters",
+    copy: Literal[False] = False,
+) -> None: ...
+@overload
+def stochastic_tracing(
+    tdata: td.TreeData,
+    number_of_cassettes: int = 10,
+    size_of_cassette: int = 3,
+    mutation_rate: float | list[float] = 0.1,
+    state_generating_distribution: Callable[[], float] = ...,
+    number_of_states: int = 100,
+    state_priors: dict | list[dict] | None = None,
+    initiation_rate: float | None = None,
+    continuation_rate: float | None = None,
+    unmodified_state: str = "*",
+    random_seed: int | None = None,
+    tree_key: str | None = None,
+    time_key: str = "time",
+    key_added: str = "characters",
+    *,
+    copy: Literal[True],
+) -> td.TreeData: ...
+def stochastic_tracing(
+    tdata: td.TreeData,
+    number_of_cassettes: int = 10,
+    size_of_cassette: int = 3,
+    mutation_rate: float | list[float] = 0.1,
+    state_generating_distribution: Callable[[], float] = lambda: np.random.exponential(1e-5),
+    number_of_states: int = 100,
+    state_priors: dict | list[dict] | None = None,
+    initiation_rate: float | None = None,
+    continuation_rate: float | None = None,
+    unmodified_state: str = "*",
+    random_seed: int | None = None,
+    tree_key: str | None = None,
+    time_key: str = "time",
+    key_added: str = "characters",
+    copy: bool = False,
+) -> td.TreeData | None:
+    """Simulate stochastic lineage tracing data on a tree.
+
+    Simulates the accumulation of heritable mutations at genomic target sites
+    as cells divide. Target sites are organised into cassettes — groups of
+    independently-editable positions that share a silencing fate during dropout.
+    Each site starts in ``unmodified_state`` and transitions irreversibly to a
+    mutant state drawn from ``state_priors`` when edited. Results are stored
+    as strings on every node and summarised in a leaf-level DataFrame.
+
+    Editing can follow two kinetic models selected by ``initiation_rate``:
+
+    * **Independent** (default): each open site is cut independently at
+      ``mutation_rate`` per unit time (exponential process).
+    * **Sequential** (``initiation_rate`` provided): a cassette first initiates
+      at its leftmost site after an exponential wait, then continues editing
+      subsequent sites left-to-right, each separated by an independent
+      exponential wait at ``continuation_rate``.
+
+    Results are written in-place to ``tdata``:
+
+    * ``tdata.obsm[key_added]``: ``pd.DataFrame`` (n_leaves × n_chars),
+      columns named ``"C-I"`` (cassette, site).
+    * ``tree.nodes[node][key_added]``: character state list of length
+      ``number_of_cassettes * size_of_cassette`` for every node (leaves and
+      internal), positionally aligned with the ``obsm`` columns.
+    * ``tdata.uns["cassette_size"]``, ``tdata.uns["unmodified_state"]``:
+      stored for :func:`missing_data`.
+    * ``tdata.uns["priors"]``: the state priors of each character as
+      ``{character name: {state: probability}}``, used by the solvers. Keys
+      are strings so the TreeData can be written to h5td.
+
+    Missing data (heritable dropout, stochastic silencing, resections) is
+    handled separately — call :func:`missing_data` after this function.
+
+    Examples:
+        GESTALT (McKenna et al., Science 2016)::
+
+            stochastic_tracing(tdata, number_of_cassettes=3, size_of_cassette=10)
+
+        Chan et al. Cas9 indels (Chan et al., Nature 2019)::
+
+            stochastic_tracing(tdata, number_of_cassettes=10, size_of_cassette=3)
+
+        DNA Typewriter (Choi et al., Nature 2022)::
+
+            stochastic_tracing(
+                tdata,
+                number_of_cassettes=10,
+                size_of_cassette=5,
+                initiation_rate=0.01,
+                continuation_rate=0.2,
+                state_priors={str(i): 1 / 16 for i in range(1, 17)},
+            )
+
+        PEtracer (Koblan et al., Science 2025)::
+
+            stochastic_tracing(
+                tdata,
+                number_of_cassettes=10,
+                size_of_cassette=3,
+                state_priors={str(i): 1 / 8 for i in range(1, 9)},
+            )
+
+    Args:
+        tdata: TreeData with a tree in ``obst[tree_key]``.
+        number_of_cassettes: Number of cassette arrays.
+        size_of_cassette: Number of editable sites per cassette.
+        mutation_rate: Cutting rate (exponential parameter) for the independent
+            model. Float or list of length ``size_of_cassette`` (tiled across
+            cassettes) or ``number_of_cassettes * size_of_cassette``. Ignored
+            (with a warning) in sequential mode.
+        state_generating_distribution: Distribution for sampling state
+            likelihoods when ``state_priors=None``.
+        number_of_states: Number of possible states generated by
+            ``state_generating_distribution`` when ``state_priors=None``.
+        state_priors: Prior probabilities for each mutant state. Single dict
+            (shared across all sites), list of ``size_of_cassette`` dicts
+            (tiled across cassettes), or list of ``n_chars`` dicts (one per
+            site). If ``None``, priors are sampled from
+            ``state_generating_distribution``. States are converted to the type
+            of ``unmodified_state`` (e.g. ``{1: 0.5}`` becomes ``{"1": 0.5}``
+            with the default ``"*"``) so the matrix has a single state type.
+        initiation_rate: Exponential rate for cassette initiation. Providing
+            this activates **sequential mode**.
+        continuation_rate: Exponential rate for sequential site editing after
+            initiation. Required when ``initiation_rate`` is given.
+        unmodified_state: String written to unedited sites. Default ``"*"``.
+            Stored in ``tdata.uns["unmodified_state"]`` for downstream use.
+        random_seed: NumPy random seed for reproducibility.
+        tree_key: Key in ``tdata.obst`` for the tree. Only required if
+            ``tdata`` contains multiple trees.
+        time_key: Node attribute holding node times (default ``"time"``); branch
+            lengths are time differences. Must be present on all nodes.
+        key_added: Key used for ``obsm`` and node attributes.
+        copy: If ``True``, operate on a copy of ``tdata`` and return the copy.
+            If ``False`` (default), modify ``tdata`` in place.
+
+    Returns:
+        If ``copy=True``, a new TreeData; otherwise ``None`` (``tdata`` is
+        modified in place).
+
+    Raises:
+        DataSimulatorError: On invalid parameters or missing node times.
+    """
+    tree, tree_key = _get_digraph(tdata, tree_key)
+    if not _is_int(number_of_cassettes) or number_of_cassettes <= 0:
+        raise DataSimulatorError("Specify a positive integer number of cassettes.")
+    if not _is_int(size_of_cassette) or size_of_cassette <= 0:
+        raise DataSimulatorError("Specify a positive integer number of cut-sites per cassette.")
+    number_of_cassettes, size_of_cassette = int(number_of_cassettes), int(size_of_cassette)
+    _check_node_attr(tree, time_key)
+
+    sequential = initiation_rate is not None
+    n_chars = number_of_cassettes * size_of_cassette
+    columns = [f"{c}-{i}" for c in range(number_of_cassettes) for i in range(size_of_cassette)]
+
+    if sequential:
+        if not _is_real(initiation_rate) or initiation_rate <= 0:
+            raise DataSimulatorError("Initiation rate must be a positive float.")
+        if continuation_rate is None:
+            raise DataSimulatorError("continuation_rate is required in sequential mode.")
+        if not _is_real(continuation_rate) or continuation_rate <= 0:
+            raise DataSimulatorError("Continuation rate must be a positive float.")
+        if not (_is_real(mutation_rate) and mutation_rate == 0.1):
+            warnings.warn(
+                "mutation_rate is ignored in sequential mode (initiation_rate is set); "
+                "editing follows initiation_rate and continuation_rate.",
+                UserWarning,
+                stacklevel=2,
+            )
+    else:
+        rate_per_char = _resolve_mutation_rate(mutation_rate, number_of_cassettes, size_of_cassette)
+
+    if random_seed is not None:
+        np.random.seed(random_seed)
+
+    # Seeded first: priors sampled from ``state_generating_distribution`` use the
+    # global NumPy RNG.
+    priors_per_char = _resolve_state_priors(
+        state_priors,
+        state_generating_distribution,
+        number_of_states,
+        n_chars,
+        size_of_cassette,
+    )
+    # One state type per matrix (h5td cannot store mixed str/int categories).
+    priors_per_char = [
+        {_match_state_type(state, [unmodified_state]): p for state, p in prior.items()}
+        for prior in priors_per_char
+    ]
+
+    if copy:
+        tdata = tdata.copy()
+
+    tree = tdata.obst[tree_key]
+    char_arrays: dict[str, list[str]] = {node: [unmodified_state] * n_chars for node in tree.nodes}
+
+    for node in nx.topological_sort(tree):
+        if tree.in_degree(node) == 0:
+            continue  # root stays all-unmodified
+
+        parent = next(iter(tree.predecessors(node)))
+        branch_len = tree.nodes[node][time_key] - tree.nodes[parent][time_key]
+        array = char_arrays[parent].copy()
+
+        if not sequential:
+            open_sites = [i for i, s in enumerate(array) if s == unmodified_state]
+            new_cuts = [
+                site
+                for site in open_sites
+                if np.random.uniform() < 1 - np.exp(-branch_len * rate_per_char[site])
+            ]
+            array = _introduce_states(array, new_cuts, priors_per_char)
+        else:
+            for c in range(0, n_chars, size_of_cassette):
+                if array[c] != unmodified_state:
+                    # Already initiated — continue from next unedited site
+                    time = 0.0
+                    i = c + 1
+                    while time < branch_len and i < c + size_of_cassette:
+                        if array[i] == unmodified_state:
+                            time += np.random.exponential(1 / continuation_rate)
+                            if time < branch_len:
+                                _edit_site(array, i, priors_per_char[i])
+                        i += 1
+                else:
+                    # Uninitiated — wait for initiation then continue
+                    i = c
+                    time = np.random.exponential(1 / initiation_rate)
+                    if time < branch_len:
+                        _edit_site(array, i, priors_per_char[i])
+                    i += 1
+                    while time < branch_len and i < c + size_of_cassette:
+                        if array[i] == unmodified_state:
+                            time += np.random.exponential(1 / continuation_rate)
+                            if time < branch_len:
+                                _edit_site(array, i, priors_per_char[i])
+                        i += 1
+
+        char_arrays[node] = array
+
+    for node in tree.nodes:
+        tree.nodes[node][key_added] = char_arrays[node]
+
+    obs_names = list(tdata.obs_names)
+    all_states = list(dict.fromkeys(state for priors in priors_per_char for state in priors)) + [
+        unmodified_state
+    ]
+    categorical_dtype = pd.CategoricalDtype(categories=all_states, ordered=True)
+
+    tdata.obsm[key_added] = _build_characters_dataframe(
+        char_arrays, columns, obs_names, categorical_dtype
+    )
+
+    tdata.uns["cassette_size"] = size_of_cassette
+    tdata.uns["unmodified_state"] = unmodified_state
+    tdata.uns["missing_state"] = "-"
+    tdata.uns["priors"] = _format_priors(priors_per_char, columns)
+    tdata.uns[f"{key_added}_colors"] = _get_state_colors(
+        all_states, custom={unmodified_state: "lightgray"}
+    )
+
+    return tdata if copy else None
+
+
+@overload
+def missing_data(
+    tdata: td.TreeData,
+    heritable_rate: float = 0.0,
+    stochastic_rate: float = 0.0,
+    collapse_sites_on_cassette: bool = False,
+    missing_state: str = "-",
+    unmodified_state: str | None = None,
+    key_added: str | None = None,
+    random_seed: int | None = None,
+    tree_key: str | None = None,
+    time_key: str = "time",
+    characters_key: str = "characters",
+    copy: Literal[False] = False,
+) -> None: ...
+@overload
+def missing_data(
+    tdata: td.TreeData,
+    heritable_rate: float = 0.0,
+    stochastic_rate: float = 0.0,
+    collapse_sites_on_cassette: bool = False,
+    missing_state: str = "-",
+    unmodified_state: str | None = None,
+    key_added: str | None = None,
+    random_seed: int | None = None,
+    tree_key: str | None = None,
+    time_key: str = "time",
+    characters_key: str = "characters",
+    *,
+    copy: Literal[True],
+) -> td.TreeData: ...
+def missing_data(
+    tdata: td.TreeData,
+    heritable_rate: float = 0.0,
+    stochastic_rate: float = 0.0,
+    collapse_sites_on_cassette: bool = False,
+    missing_state: str = "-",
+    unmodified_state: str | None = None,
+    key_added: str | None = None,
+    random_seed: int | None = None,
+    tree_key: str | None = None,
+    time_key: str = "time",
+    characters_key: str = "characters",
+    copy: bool = False,
+) -> td.TreeData | None:
+    """Apply heritable and stochastic missing data to a traced tree.
+
+    Intended to be composed after :func:`stochastic_tracing`. Applies three
+    types of missing data at the cassette level:
+
+    **Heritable silencing** (``heritable_rate``): cassette-level
+    transcriptional silencing modelled as an exponential process per branch.
+    Silencing propagates from parent to all descendants — once a cassette is
+    silenced at a node, all descendant nodes also have it silenced. Both
+    internal nodes and leaves are affected.
+
+    **Stochastic dropout** (``stochastic_rate``): assay-level cassette
+    dropout applied only to leaf nodes with a fixed per-cassette probability.
+
+    **Resection** (``collapse_sites_on_cassette=True``): when two or more sites
+    in the same cassette were cut on a single branch (detected by comparing a
+    node to its parent), all sites between the leftmost and rightmost cut are
+    set to ``missing_state``. Resections propagate to all descendants of the
+    node where they occurred.
+
+    All three types write ``missing_state`` to all affected sites. Cassettes
+    are consecutive groups of ``tdata.uns["cassette_size"]`` characters (written
+    by :func:`stochastic_tracing`; 1 if absent, i.e. every character is its own
+    cassette).
+
+    Results are written in-place (or to ``key_added`` if specified):
+
+    * ``tree.nodes[node][output_key]``: updated character lists for all nodes
+    * ``tdata.obsm[output_key]``: rebuilt from updated leaf attributes
+    * ``tdata.uns["missing_state"]`` / ``tdata.uns["unmodified_state"]``
+
+    Args:
+        tdata: TreeData previously processed by :func:`stochastic_tracing`.
+        heritable_rate: Per-branch exponential rate of cassette
+            transcriptional silencing (heritable, propagates to descendants).
+        stochastic_rate: Per-cassette dropout probability applied
+            independently to each leaf (stochastic, assay sensitivity).
+        collapse_sites_on_cassette: If ``True``, detect multi-cut cassettes by
+            comparing each node to its parent and mark intermediate sites as
+            ``missing_state``. Resections propagate to descendants.
+        missing_state: Value written to all sites in a silenced or resected
+            cassette. Default ``"-"``. Converted to the type of the character
+            states when possible (e.g. ``-1`` becomes ``"-1"`` for string states)
+            so the matrix keeps a single state type.
+        unmodified_state: String representing the wildtype / unedited state.
+            If ``None``, uses ``tdata.uns["unmodified_state"]``; falls back to
+            ``"*"``. Used for resection detection when
+            ``collapse_sites_on_cassette=True``.
+        key_added: If ``None`` (default), overwrites ``tdata.obsm[characters_key]``
+            and node attributes at ``characters_key`` in-place. If a string,
+            writes results to ``tdata.obsm[key_added]`` and node attributes at
+            ``key_added``, leaving the originals untouched.
+        random_seed: NumPy random seed for reproducibility.
+        tree_key: Key in ``tdata.obst`` for the tree. Only required if
+            ``tdata`` contains multiple trees.
+        time_key: Node attribute holding node times (default ``"time"``); branch
+            lengths are time differences. Required on all nodes when
+            ``heritable_rate > 0``.
+        characters_key: Key to read character data from.
+        copy: If ``True``, operate on a copy of ``tdata`` and return the copy.
+            If ``False`` (default), modify ``tdata`` in place.
+
+    Returns:
+        If ``copy=True``, a new TreeData; otherwise ``None`` (``tdata`` is
+        modified in place).
+
+    Raises:
+        DataSimulatorError: If there is no character matrix or, with
+            ``heritable_rate > 0``, no node times.
+    """
+    tree, tree_key = _get_digraph(tdata, tree_key)
+    _check_characters(tdata, characters_key)
+    if heritable_rate > 0:
+        _check_node_attr(tree, time_key)
+    if unmodified_state is None:
+        unmodified_state = tdata.uns.get("unmodified_state", "*")
+
+    if (heritable_rate == 0) and (stochastic_rate == 0) and not collapse_sites_on_cassette:
+        warnings.warn(
+            "No missing data will be applied since all rates are zero and "
+            "collapse_sites_on_cassette is False. Returning original tdata.",
+            stacklevel=2,
+        )
+
+    if copy:
+        tdata = tdata.copy()
+
+    if random_seed is not None:
+        np.random.seed(random_seed)
+
+    tree = tdata.obst[tree_key]
+    matrix = _get_characters(tdata, characters_key)
+    columns = list(matrix.columns)
+    cassette_size = int(tdata.uns.get("cassette_size", 1))
+    n_cassettes = len(columns) // cassette_size
+    output_key = key_added if key_added is not None else characters_key
+
+    # Characters are read from node attributes (written by stochastic_tracing). Nodes
+    # without them (e.g. leaves merged by sample_supercellular) use their observed row.
+    has_node_chars = all(characters_key in data for _, data in tree.nodes(data=True))
+
+    if collapse_sites_on_cassette and not has_node_chars:
+        raise DataSimulatorError(
+            f"collapse_sites_on_cassette requires '{characters_key}' stored as node "
+            f"attributes, but none were found. Ensure stochastic_tracing was called "
+            f"first, or set collapse_sites_on_cassette=False."
+        )
+
+    observed = dict(zip(matrix.index, matrix.astype(object).to_numpy().tolist(), strict=True))
+    chars: dict[str, list] = {}
+    for node, data in tree.nodes(data=True):
+        if characters_key in data:
+            chars[node] = list(data[characters_key])
+        elif node in observed:
+            chars[node] = list(observed[node])
+        else:
+            chars[node] = [unmodified_state] * len(columns)
+    # Snapshot of the original characters for collapse detection; ``chars`` is modified.
+    original_chars = {node: list(c) for node, c in chars.items()} if has_node_chars else {}
+    missing_state = _match_state_type(
+        missing_state,
+        {s for c in chars.values() for v in c for s in (v if isinstance(v, tuple) else (v,))},
+    )
+
+    # --- Resection (collapse) ---
+    # Detected per-branch by comparing original chars of each node to its parent.
+    # Propagated cumulatively to all descendants via collapsed_sites tracking.
+    if collapse_sites_on_cassette and cassette_size > 1:
+        collapsed_sites: dict[str, set[int]] = {}
+        for node in nx.topological_sort(tree):
+            if tree.in_degree(node) == 0:
+                collapsed_sites[node] = set()
+                continue
+            parent = next(iter(tree.predecessors(node)))
+            new_collapsed: set[int] = set()
+            for cassette_idx in range(n_cassettes):
+                start = cassette_idx * cassette_size
+                end = (cassette_idx + 1) * cassette_size
+                # New cuts on this branch: unmodified in parent, edited in child,
+                # and not already collapsed from an ancestor
+                new_cuts = [
+                    i
+                    for i in range(start, end)
+                    if (
+                        i not in collapsed_sites[parent]
+                        and original_chars[parent][i] == unmodified_state
+                        and original_chars[node][i] != unmodified_state
+                    )
+                ]
+                if len(new_cuts) > 1:
+                    for i in range(new_cuts[0], new_cuts[-1] + 1):
+                        new_collapsed.add(i)
+            collapsed_sites[node] = collapsed_sites[parent] | new_collapsed
+            for i in collapsed_sites[node]:
+                chars[node][i] = missing_state
+
+    # --- Heritable silencing ---
+    silenced: dict[str, set[int]] = {}
+    for node in nx.topological_sort(tree):
+        if tree.in_degree(node) == 0:
+            silenced[node] = set()
+            continue
+        parent = next(iter(tree.predecessors(node)))
+        # Node times are only needed when silencing can happen; the draws below are
+        # made regardless, so seeded results do not depend on heritable_rate == 0.
+        branch_len = (
+            tree.nodes[node][time_key] - tree.nodes[parent][time_key] if heritable_rate > 0 else 0.0
+        )
+        p = 1 - np.exp(-branch_len * heritable_rate)
+        new_silenced = {c for c in range(n_cassettes) if np.random.uniform() < p}
+        silenced[node] = silenced[parent] | new_silenced
+        for c in silenced[node]:
+            for i in range(c * cassette_size, (c + 1) * cassette_size):
+                chars[node][i] = missing_state
+
+    # --- Stochastic dropout (leaves only) ---
+    for node in tree.nodes:
+        if tree.out_degree(node) != 0:
+            continue
+        for c in range(n_cassettes):
+            if np.random.uniform() < stochastic_rate:
+                for i in range(c * cassette_size, (c + 1) * cassette_size):
+                    chars[node][i] = missing_state
+
+    for node in tree.nodes:
+        tree.nodes[node][output_key] = chars[node]
+
+    obs_names = list(tdata.obs_names)
+    rows = [chars[node] if node in chars else list(observed[node]) for node in obs_names]
+    tdata.uns["missing_state"] = missing_state
+    tdata.uns["unmodified_state"] = unmodified_state
+
+    # Ambiguous (tuple) states, e.g. from sample_supercellular, cannot be categories.
+    if any(isinstance(s, tuple) for row in rows for s in row):
+        tdata.obsm[output_key] = pd.DataFrame(rows, index=obs_names, columns=columns)
+        return tdata if copy else None
+
+    new_matrix, categories, old_categories = _rebuild_matrix(
+        rows, matrix, obs_names, extra_states=[missing_state]
+    )
+    tdata.obsm[output_key] = _like_source(new_matrix, tdata.obsm[characters_key])
+
+    # Carry over the state colors and add "white" for missing_state.
+    source_colors = tdata.uns.get(f"{characters_key}_colors")
+    if categories is not None and source_colors is not None:
+        if len(source_colors) == len(old_categories):
+            colors = dict(zip(old_categories, source_colors, strict=True))
+            colors.setdefault(missing_state, "white")
+        else:  # unused categories were dropped (e.g. by subsetting): recolor
+            custom = {unmodified_state: "lightgray", missing_state: "white"}
+            colors = dict(
+                zip(categories, _get_state_colors(categories, custom=custom), strict=True)
+            )
+        tdata.uns[f"{output_key}_colors"] = [colors.get(cat, "white") for cat in categories]
+
+    return tdata if copy else None
+
+
+@overload
+def noise(
+    tdata: td.TreeData,
+    error_rate: float = 0.0,
+    priors: dict | list | bool | None = None,
+    missing_state: str | None = None,
+    key_added: str | None = None,
+    random_seed: int | None = None,
+    tree_key: str | None = None,
+    characters_key: str = "characters",
+    copy: Literal[False] = False,
+) -> None: ...
+@overload
+def noise(
+    tdata: td.TreeData,
+    error_rate: float = 0.0,
+    priors: dict | list | bool | None = None,
+    missing_state: str | None = None,
+    key_added: str | None = None,
+    random_seed: int | None = None,
+    tree_key: str | None = None,
+    characters_key: str = "characters",
+    *,
+    copy: Literal[True],
+) -> td.TreeData: ...
+def noise(
+    tdata: td.TreeData,
+    error_rate: float = 0.0,
+    priors: dict | list | bool | None = None,
+    missing_state: str | None = None,
+    key_added: str | None = None,
+    random_seed: int | None = None,
+    tree_key: str | None = None,
+    characters_key: str = "characters",
+    copy: bool = False,
+) -> td.TreeData | None:
+    """Apply sequencing-error state miscalls to the character matrix.
+
+    Models assay-level read errors that cause an observed character state to be
+    miscalled as a different state. Unlike :func:`missing_data` (which drops
+    states to ``missing_state`` and can propagate heritably), ``noise`` acts only
+    on the observed leaf states and is **not heritable**: each leaf is treated
+    independently.
+
+    For each leaf and site, with probability ``error_rate`` the called state is
+    replaced by a different state drawn from that character's prior distribution
+    (excluding the current state, with the remaining probabilities
+    renormalized). Missing states are never altered and are never introduced.
+
+    Without priors (none given or stored, or ``priors=False``), they are
+    imputed from the empirical per-character state distribution of the matrix
+    (excluding missing states).
+
+    Args:
+        tdata: TreeData with a character matrix in ``tdata.obsm[characters_key]``.
+        error_rate: Per-site probability that a called state is miscalled.
+        priors: Priors for character states (``{character name: {state:
+            probability}}``). ``None`` (default) uses ``tdata.uns["priors"]`` if
+            present and otherwise imputes them; ``True`` requires stored priors
+            and raises if there are none; ``False`` imputes them; a dict (or a
+            list of per-character dicts) is used directly.
+        missing_state: Value(s) indicating missing data. If ``None``, uses
+            ``tdata.uns["missing_state"]`` (falling back to the package default).
+        key_added: If ``None`` (default), overwrites ``tdata.obsm[characters_key]``
+            (and the matching node attributes) in place. If a string, writes
+            results to ``tdata.obsm[key_added]`` and node attribute ``key_added``
+            instead (internal nodes keep their states), leaving the originals
+            untouched.
+        random_seed: NumPy random seed for reproducibility.
+        tree_key: Key in ``tdata.obst`` for the tree. Only required if
+            ``tdata`` contains multiple trees.
+        characters_key: Key to read character data from.
+        copy: If ``True``, operate on a copy of ``tdata`` and return the copy.
+            If ``False`` (default), modify ``tdata`` in place.
+
+    Returns:
+        If ``copy=True``, a new TreeData; otherwise ``None`` (``tdata`` is
+        modified in place).
+
+    Raises:
+        DataSimulatorError: If there is no character matrix.
+    """
+    _, tree_key = _get_digraph(tdata, tree_key)
+    _check_characters(tdata, characters_key)
+    if error_rate == 0:
+        warnings.warn(
+            "No noise will be applied since error_rate is zero. Returning original tdata.",
+            stacklevel=2,
+        )
+
+    if copy:
+        tdata = tdata.copy()
+
+    if random_seed is not None:
+        np.random.seed(random_seed)
+
+    missing_set = _normalize_missing(_get_parameter(tdata, "missing_state", missing_state))
+
+    matrix = _get_characters(tdata, characters_key)
+    columns = list(matrix.columns)
+    output_key = key_added if key_added is not None else characters_key
+
+    priors = _resolve_priors(tdata, priors, matrix)
+    if priors is None:
+        priors = _impute_priors(matrix, missing_set)
+
+    # Apply miscalls column by column, preserving the column dtypes.
+    result = {}
+    for idx, col in enumerate(columns):
+        source = matrix[col]
+        values = source.astype(object).to_numpy().copy()
+        char_priors = priors.get(idx) or {}
+        states = list(char_priors.keys())
+        weights = np.array([char_priors[s] for s in states], dtype=float)
+
+        if error_rate > 0 and states:
+            for i in range(len(values)):
+                current = values[i]
+                if current in missing_set:
+                    continue
+                if np.random.uniform() >= error_rate:
+                    continue
+                # Draw a replacement state, excluding the current one.
+                keep = [s != current for s in states]
+                alt_states = [s for s, k in zip(states, keep, strict=True) if k]
+                if not alt_states:
+                    continue
+                alt_weights = weights[keep]
+                total = alt_weights.sum()
+                p = alt_weights / total if total > 0 else None
+                # Drawing an index keeps the states' Python types (same draws as
+                # choosing from the states themselves).
+                values[i] = alt_states[np.random.choice(len(alt_states), p=p)]
+
+        if isinstance(source.dtype, pd.CategoricalDtype):
+            categories = list(source.dtype.categories)
+            for s in states:
+                if s not in categories:
+                    categories.append(s)
+            result[col] = pd.Categorical(
+                values, categories=categories, ordered=source.dtype.ordered
+            )
+        else:
+            result[col] = _as_dtype(list(values), source.dtype, matrix.index)
+
+    new_matrix = pd.DataFrame(result, index=matrix.index)
+    tdata.obsm[output_key] = _like_source(new_matrix, tdata.obsm[characters_key])
+
+    # Keep node attributes in sync if characters are stored on the tree. Noise is
+    # not heritable: internal nodes keep their states under ``output_key``.
+    tree = tdata.obst[tree_key]
+    if any(characters_key in data for _, data in tree.nodes(data=True)):
+        if output_key != characters_key:
+            for _, data in tree.nodes(data=True):
+                if characters_key in data:
+                    data[output_key] = list(data[characters_key])
+        rows = new_matrix.astype(object).to_numpy().tolist()
+        for leaf, row in zip(new_matrix.index, rows, strict=True):
+            if leaf in tree.nodes:
+                tree.nodes[leaf][output_key] = row
+
+    return tdata if copy else None
+
+
+def _impute_priors(matrix: pd.DataFrame, missing_set: set) -> dict[int, dict[str, float]]:
+    """Impute per-character priors from the empirical state distribution.
+
+    For each column, computes the frequency of each non-missing state and uses
+    it as that character's prior. Columns are keyed by positional index.
+    """
+    priors: dict[int, dict[str, float]] = {}
+    for idx, col in enumerate(matrix.columns):
+        observed = [v for v in matrix[col].astype(object) if v not in missing_set]
+        counts = pd.Series(observed).value_counts()
+        total = counts.sum()
+        priors[idx] = {state: count / total for state, count in counts.items()} if total > 0 else {}
+    return priors
+
+
+def _check_characters(tdata: td.TreeData, characters_key: str) -> None:
+    """Raise a clear error if ``tdata`` has no character matrix under *characters_key*."""
+    if characters_key not in tdata.obsm:
+        raise DataSimulatorError(
+            f"No character matrix in tdata.obsm[{characters_key!r}]. Simulate one with "
+            "stochastic_tracing first, or pass characters_key."
+        )
+
+
+def _check_node_attr(
+    tree: nx.DiGraph,
+    key: str,
+    error: type[Exception] = DataSimulatorError,
+    arg: str = "time_key",
+) -> None:
+    """Raise a clear error if a node of *tree* lacks the node-time attribute *key*."""
+    missing = [node for node, data in tree.nodes(data=True) if key not in data]
+    if missing:
+        raise error(
+            f"{len(missing)} of {tree.number_of_nodes()} tree nodes (e.g. {missing[0]!r}) have "
+            f"no {key!r} attribute. Store node times on every node, or pass {arg}= to "
+            "name the node attribute that holds them."
+        )
+
+
+def _is_int(value: Any) -> bool:
+    """``True`` for Python and NumPy integers (not booleans)."""
+    return isinstance(value, numbers.Integral) and not isinstance(value, (bool, np.bool_))
+
+
+def _is_real(value: Any) -> bool:
+    """``True`` for Python and NumPy real numbers (not booleans)."""
+    return isinstance(value, numbers.Real) and not isinstance(value, (bool, np.bool_))
+
+
+def _is_nan(value: Any) -> bool:
+    return isinstance(value, float) and math.isnan(value)
+
+
+def _match_state_type(value: Any, states: Iterable) -> Any:
+    """*value* converted to the type shared by *states* (``str`` or ``int``), if any.
+
+    Keeps a character matrix to a single state type, which h5td requires: e.g. a
+    ``-1`` missing state becomes ``"-1"`` among string states.
+    """
+    states = [s for s in states if not _is_nan(s)]
+    if not states:
+        return value
+    if all(isinstance(s, str) for s in states):
+        return value if isinstance(value, str) else str(value)
+    if all(_is_int(s) for s in states) and isinstance(value, str):
+        try:
+            return int(value)
+        except ValueError:
+            return value
+    return value
+
+
+def _as_dtype(values: list, dtype: Any, index: pd.Index) -> pd.Series:
+    """*values* as a Series of *dtype* if they fit it, otherwise of an inferred dtype."""
+    series = pd.Series(values, index=index, dtype=object)
+    try:
+        return series.astype(dtype)
+    except (TypeError, ValueError):
+        return series.infer_objects()
+
+
+def _rebuild_matrix(
+    rows: list[list], matrix: pd.DataFrame, index: list, extra_states: Iterable = ()
+) -> tuple[pd.DataFrame, list | None, list | None]:
+    """Character matrix from per-row state lists, with the column dtypes of *matrix*.
+
+    Categorical columns share one dtype whose categories are the union of the
+    columns' categories (anndata drops unused categories column by column when a
+    TreeData is subset), then any new states and *extra_states*. Other columns
+    keep their dtype when the new states fit it.
+
+    Returns:
+        The matrix, its categories (``None`` without categorical columns) and the
+        union of the categories of *matrix*.
+    """
+    columns = list(matrix.columns)
+    is_cat = [isinstance(matrix[col].dtype, pd.CategoricalDtype) for col in columns]
+    categories = old_categories = dtype = None
+    if any(is_cat):
+        cat_cols = [col for col, cat in zip(columns, is_cat, strict=True) if cat]
+        old_categories = list(
+            dict.fromkeys(s for col in cat_cols for s in matrix[col].cat.categories)
+        )
+        new_states = [row[j] for row in rows for j, cat in enumerate(is_cat) if cat]
+        new_states += list(extra_states)
+        categories = list(dict.fromkeys(old_categories + [s for s in new_states if not _is_nan(s)]))
+        dtype = pd.CategoricalDtype(categories, ordered=matrix[cat_cols[0]].cat.ordered)
+    data = {}
+    for j, col in enumerate(columns):
+        values = [row[j] for row in rows]
+        if is_cat[j]:
+            data[col] = pd.Categorical(values, dtype=dtype)
+        else:
+            data[col] = _as_dtype(values, matrix[col].dtype, pd.Index(index))
+    return pd.DataFrame(data, index=index), categories, old_categories
+
+
+def _like_source(matrix: pd.DataFrame, source: Any) -> pd.DataFrame | np.ndarray:
+    """*matrix* as a NumPy array if the original character matrix was one."""
+    return matrix.to_numpy() if isinstance(source, np.ndarray) else matrix
+
+
+def _build_characters_dataframe(
+    chars: dict[str, list[str]],
+    columns: list[str],
+    obs_names: list[str],
+    categorical_dtype: pd.CategoricalDtype,
+) -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            col: pd.Categorical(
+                [chars[n][j] for n in obs_names],
+                dtype=categorical_dtype,
+            )
+            for j, col in enumerate(columns)
+        },
+        index=obs_names,
+    )
+
+
+def _resolve_mutation_rate(
+    mutation_rate: float | list[float],
+    n_cassettes: int,
+    cassette_size: int,
+) -> list[float]:
+    n_chars = n_cassettes * cassette_size
+    if isinstance(mutation_rate, np.ndarray):
+        mutation_rate = mutation_rate.tolist()
+    if _is_real(mutation_rate):
+        if mutation_rate < 0:
+            raise DataSimulatorError("Mutation rate needs to be non-negative.")
+        return [float(mutation_rate)] * n_chars
+    elif isinstance(mutation_rate, list):
+        if np.any(np.array(mutation_rate) < 0):
+            raise DataSimulatorError("Mutation rate needs to be non-negative.")
+        if len(mutation_rate) == n_chars:
+            return mutation_rate
+        elif len(mutation_rate) == cassette_size:
+            return mutation_rate * n_cassettes
+        else:
+            raise DataSimulatorError(
+                f"mutation_rate has {len(mutation_rate)} values; expected {cassette_size} "
+                f"(size_of_cassette, one per site, tiled across cassettes) or {n_chars} "
+                "(one per character)."
+            )
+    else:
+        raise DataSimulatorError("Mutation rate needs to be a float or a list.")
+
+
+def _resolve_state_priors(
+    state_priors: dict | list[dict] | None,
+    state_generating_distribution: Callable[[], float],
+    number_of_states: int,
+    n_chars: int,
+    cassette_size: int,
+) -> list[dict]:
+    if state_priors is None:
+        probs = sorted(
+            (state_generating_distribution() for _ in range(number_of_states)),
+            reverse=True,
+        )
+        Z = np.sum(probs)
+        prior = {str(i + 1): p / Z for i, p in enumerate(probs)}
+        return [prior] * n_chars
+
+    if isinstance(state_priors, np.ndarray):
+        state_priors = state_priors.tolist()
+
+    if isinstance(state_priors, dict):
+        if not math.isclose(np.sum(list(state_priors.values())), 1.0):
+            raise DataSimulatorError("Mutation priors do not sum to 1.")
+        return [state_priors] * n_chars
+    elif isinstance(state_priors, list):
+        if not all(isinstance(item, dict) for item in state_priors):
+            raise DataSimulatorError("State priors must be a dict or list of dicts.")
+        n_cassettes = n_chars // cassette_size
+        for prior in state_priors:
+            if not math.isclose(np.sum(list(prior.values())), 1.0):
+                raise DataSimulatorError("Mutation priors do not sum to 1.")
+        if len(state_priors) == n_chars:
+            return state_priors
+        elif len(state_priors) == cassette_size:
+            return state_priors * n_cassettes
+        else:
+            raise DataSimulatorError(
+                f"state_priors has {len(state_priors)} dicts; expected {cassette_size} "
+                f"(size_of_cassette, one per site, tiled across cassettes) or {n_chars} "
+                "(one per character)."
+            )
+    else:
+        raise DataSimulatorError("State priors must be a dict or list of dicts.")
+
+
+def _introduce_states(
+    array: list[str],
+    cuts: list[int],
+    priors_per_char: list[dict],
+) -> list[str]:
+    updated = array.copy()
+    for i in cuts:
+        states = list(priors_per_char[i].keys())
+        probs = list(priors_per_char[i].values())
+        updated[i] = np.random.choice(states, p=probs)
+    return updated
+
+
+def _edit_site(array: list[str], site: int, prior: dict) -> None:
+    states = list(prior.keys())
+    probs = list(prior.values())
+    array[site] = np.random.choice(states, p=probs)
+
+
+def _get_state_colors(categories: list, custom=None) -> list[str]:
+    """Generate color palette for states."""
+    n = len(categories)
+
+    if n <= len(godsnot_102):
+        colors = dict(zip(categories, godsnot_102[:n], strict=True))
+    else:
+        sampled_colors = [
+            "#{:02x}{:02x}{:02x}".format(*(int(255 * c) for c in hsv_to_rgb(i / n, 0.85, 0.95)))
+            for i in range(n)
+        ]
+        colors = dict(zip(categories, sampled_colors, strict=True))
+
+    colors.update(custom or {})
+    return [colors[cat] for cat in categories]
+
+
+# from https://godsnotwheregodsnot.blogspot.com/2012/09/color-distribution-methodology.html
+godsnot_102 = [
+    "#FFFF00",
+    "#1CE6FF",
+    "#FF34FF",
+    "#FF4A46",
+    "#008941",
+    "#006FA6",
+    "#A30059",
+    "#FFDBE5",
+    "#7A4900",
+    "#0000A6",
+    "#63FFAC",
+    "#B79762",
+    "#004D43",
+    "#8FB0FF",
+    "#997D87",
+    "#5A0007",
+    "#809693",
+    "#6A3A4C",
+    "#1B4400",
+    "#4FC601",
+    "#3B5DFF",
+    "#4A3B53",
+    "#FF2F80",
+    "#61615A",
+    "#BA0900",
+    "#6B7900",
+    "#00C2A0",
+    "#FFAA92",
+    "#FF90C9",
+    "#B903AA",
+    "#D16100",
+    "#DDEFFF",
+    "#000035",
+    "#7B4F4B",
+    "#A1C299",
+    "#300018",
+    "#0AA6D8",
+    "#013349",
+    "#00846F",
+    "#372101",
+    "#FFB500",
+    "#C2FFED",
+    "#A079BF",
+    "#CC0744",
+    "#C0B9B2",
+    "#C2FF99",
+    "#001E09",
+    "#00489C",
+    "#6F0062",
+    "#0CBD66",
+    "#EEC3FF",
+    "#456D75",
+    "#B77B68",
+    "#7A87A1",
+    "#788D66",
+    "#885578",
+    "#FAD09F",
+    "#FF8A9A",
+    "#D157A0",
+    "#BEC459",
+    "#456648",
+    "#0086ED",
+    "#886F4C",
+    "#34362D",
+    "#B4A8BD",
+    "#00A6AA",
+    "#452C2C",
+    "#636375",
+    "#A3C8C9",
+    "#FF913F",
+    "#938A81",
+    "#575329",
+    "#00FECF",
+    "#B05B6F",
+    "#8CD0FF",
+    "#3B9700",
+    "#04F757",
+    "#C8A1A1",
+    "#1E6E00",
+    "#7900D7",
+    "#A77500",
+    "#6367A9",
+    "#A05837",
+    "#6B002C",
+    "#772600",
+    "#D790FF",
+    "#9B9700",
+    "#549E79",
+    "#FFF69F",
+    "#201625",
+    "#72418F",
+    "#BC23FF",
+    "#99ADC0",
+    "#3A2465",
+    "#922329",
+    "#5B4534",
+    "#FDE8DC",
+    "#404E55",
+    "#0089A3",
+    "#CB7E98",
+    "#A4E804",
+    "#324E72",
+]
